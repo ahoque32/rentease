@@ -14,7 +14,7 @@ export default async function NewLeasePage({
   searchParams: { tenant?: string; unit?: string }
 }) {
   const supabase = createClient()
-  const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Fetch available units and tenants
   const { data: properties } = await supabase
@@ -44,7 +44,7 @@ export default async function NewLeasePage({
     'use server'
 
     const supabase = createClient()
-    const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
+    const { data: { user } } = await supabase.auth.getUser()
 
     const leaseData = {
       landlord_id: user!.id,

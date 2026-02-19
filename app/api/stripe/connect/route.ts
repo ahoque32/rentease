@@ -5,9 +5,9 @@ import { getStripe } from '@/lib/stripe/client'
 export async function POST() {
   try {
     const supabase = createClient()
-    const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app' }
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (false) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
