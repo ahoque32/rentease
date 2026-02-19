@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -57,7 +58,9 @@ export default async function RecordPaymentPage() {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { error: paymentError } = await supabase
+    const admin = createAdminClient()
+
+    const { error: paymentError } = await admin
       .from('payments')
       .insert(paymentData)
 
@@ -66,7 +69,7 @@ export default async function RecordPaymentPage() {
     }
 
     // Update rent schedule
-    const { error: scheduleError } = await supabase
+    const { error: scheduleError } = await admin
       .from('rent_schedule')
       .update({
         amount_paid: amount,

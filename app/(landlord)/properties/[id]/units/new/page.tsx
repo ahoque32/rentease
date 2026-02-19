@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -43,7 +44,9 @@ export default async function NewUnitPage({ params }: PageProps) {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { data, error } = await supabase
+    const admin = createAdminClient()
+
+    const { data, error } = await admin
       .from('units')
       .insert(unitData)
       .select()

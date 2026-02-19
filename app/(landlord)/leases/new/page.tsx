@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -60,8 +61,10 @@ export default async function NewLeasePage({
       notes: (formData.get('notes') as string) || null,
     }
 
+    const admin = createAdminClient()
+
     // Create lease
-    const { data: lease, error: leaseError } = await supabase
+    const { data: lease, error: leaseError } = await admin
       .from('leases')
       .insert(leaseData)
       .select()
@@ -74,7 +77,7 @@ export default async function NewLeasePage({
     // Link tenant to lease
     const tenantId = formData.get('tenant_id') as string
     if (tenantId) {
-      const { error: linkError } = await supabase
+      const { error: linkError } = await admin
         .from('lease_tenants')
         .insert({
           lease_id: lease.id,
@@ -87,7 +90,7 @@ export default async function NewLeasePage({
       }
 
       // Update unit status to occupied
-      await supabase
+      await admin
         .from('units')
         .update({ status: 'occupied' })
         .eq('id', leaseData.unit_id)

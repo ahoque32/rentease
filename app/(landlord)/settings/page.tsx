@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,7 +29,8 @@ export default async function SettingsPage() {
       company_name: formData.get('companyName') as string,
     }
 
-    await supabase.from('landlords').update(updates).eq('id', user!.id)
+    const admin = createAdminClient()
+    await admin.from('landlords').update(updates).eq('id', user!.id)
     redirect('/settings')
   }
 

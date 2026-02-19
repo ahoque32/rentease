@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -45,7 +46,9 @@ export default async function EditTenantPage({ params }: PageProps) {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { data: updatedTenant, error } = await supabase
+    const admin = createAdminClient()
+
+    const { data: updatedTenant, error } = await admin
       .from('tenants')
       .update(tenantData)
       .eq('id', params.id)
