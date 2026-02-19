@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { MobileNav } from '@/components/shared/MobileNav'
+import { AIChat } from '@/components/dashboard/AIChat'
 
 export default async function LandlordLayout({
   children,
@@ -49,6 +50,9 @@ export default async function LandlordLayout({
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <MobileNav />
       </div>
+
+      {/* AI Chat Widget */}
+      <AIChat />
     </div>
   )
 }
