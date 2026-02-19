@@ -7,7 +7,7 @@ import { Building2, Plus, MapPin, Home } from 'lucide-react'
 
 export default async function PropertiesPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
   const { data: properties } = await supabase
     .from('properties')

@@ -14,7 +14,7 @@ interface PageProps {
 
 export default async function NewTaxPage({ params }: PageProps) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
   // Verify property exists and belongs to landlord
   const { data: property } = await supabase
@@ -32,7 +32,7 @@ export default async function NewTaxPage({ params }: PageProps) {
     'use server'
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
     // Build due_dates JSON from the form inputs
     const dueDates = []

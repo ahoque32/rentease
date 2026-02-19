@@ -350,22 +350,22 @@ CREATE TABLE documents (
 CREATE OR REPLACE FUNCTION generate_rent_schedule()
 RETURNS TRIGGER AS $$
 DECLARE
-  current_date DATE;
+  curr_date DATE;
   due_date DATE;
   months_count INTEGER;
 BEGIN
-  current_date := NEW.start_date;
+  curr_date := NEW.start_date;
   months_count := 0;
   
-  WHILE current_date <= NEW.end_date LOOP
+  WHILE curr_date <= NEW.end_date LOOP
     due_date := make_date(
-      EXTRACT(YEAR FROM current_date)::int,
-      EXTRACT(MONTH FROM current_date)::int,
+      EXTRACT(YEAR FROM curr_date)::int,
+      EXTRACT(MONTH FROM curr_date)::int,
       NEW.rent_due_day
     );
     
     -- Handle months with fewer days than rent_due_day
-    IF due_date < current_date THEN
+    IF due_date < curr_date THEN
       due_date := due_date + INTERVAL '1 month';
     END IF;
     
@@ -384,7 +384,7 @@ BEGIN
       );
     END IF;
     
-    current_date := current_date + INTERVAL '1 month';
+    curr_date := curr_date + INTERVAL '1 month';
     months_count := months_count + 1;
     
     -- Safety limit

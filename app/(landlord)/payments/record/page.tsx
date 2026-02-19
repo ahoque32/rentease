@@ -10,7 +10,7 @@ import { ArrowLeft } from 'lucide-react'
 
 export default async function RecordPaymentPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
   // Fetch active leases with tenant info
   const { data: leases } = await supabase
@@ -27,7 +27,7 @@ export default async function RecordPaymentPage() {
     'use server'
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
     const leaseId = formData.get('lease_id') as string
     const amount = parseFloat(formData.get('amount') as string)

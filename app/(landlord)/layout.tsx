@@ -9,28 +9,10 @@ export default async function LandlordLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
-  // Check if user has a landlord profile
-  const { data: landlord } = await supabase
-    .from('landlords')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (!landlord) {
-    // Create landlord profile if it doesn't exist
-    await supabase.from('landlords').insert({
-      id: user.id,
-      full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Landlord',
-      email: user.email!,
-    })
-  }
+  // Auth bypass — demo mode
+  // const supabase = createClient()
+  // const { data: { user } } = await supabase.auth.getUser()
+  // if (!user) { // redirect('/login') // demo mode }
 
   return (
     <div className="min-h-screen bg-gray-50">

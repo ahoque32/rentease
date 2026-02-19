@@ -8,7 +8,7 @@ import { StripeConnectButton } from '@/components/settings/StripeConnectButton'
 
 export default async function SettingsPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
   const { data: landlord } = await supabase
     .from('landlords')
@@ -20,7 +20,7 @@ export default async function SettingsPage() {
     'use server'
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = { id: '00000000-0000-0000-0000-000000000001', email: 'demo@rentease.app', user_metadata: { full_name: 'Demo Landlord' } }
 
     const updates = {
       full_name: formData.get('fullName') as string,
@@ -36,7 +36,7 @@ export default async function SettingsPage() {
     'use server'
     const supabase = createClient()
     await supabase.auth.signOut()
-    redirect('/login')
+    // redirect('/login') // demo mode
   }
 
   return (
