@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import { StripeConnectButton } from '@/components/settings/StripeConnectButton'
 
 export default async function SettingsPage() {
   const supabase = createClient()
@@ -103,16 +105,36 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           {landlord?.stripe_onboarding_complete ? (
-            <div className="flex items-center gap-2 text-green-600">
-              <div className="w-2 h-2 bg-green-600 rounded-full" />
-              <span>Connected to Stripe</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-600 rounded-full" />
+                <span className="text-green-700 font-medium">Connected to Stripe</span>
+                <Badge variant="outline" className="text-green-600 border-green-200">Active</Badge>
+              </div>
+              <p className="text-sm text-gray-500">
+                Account ID: {landlord.stripe_account_id}
+              </p>
+              <p className="text-sm text-gray-600">
+                You can receive online rent payments from tenants via ACH bank transfer or card.
+              </p>
+            </div>
+          ) : landlord?.stripe_account_id ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                <span className="text-yellow-700 font-medium">Onboarding Incomplete</span>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Your Stripe account was created but onboarding isn&apos;t complete. Click below to continue.
+              </p>
+              <StripeConnectButton label="Continue Stripe Setup" />
             </div>
           ) : (
             <div className="space-y-4">
               <p className="text-gray-600">
-                Connect your Stripe account to accept online rent payments.
+                Connect your Stripe account to accept online rent payments from tenants via ACH bank transfer or card.
               </p>
-              <Button>Connect Stripe</Button>
+              <StripeConnectButton label="Connect Stripe" />
             </div>
           )}
         </CardContent>
