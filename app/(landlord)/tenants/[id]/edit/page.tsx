@@ -9,15 +9,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft } from 'lucide-react'
 import { syncTenantToGHL } from '@/lib/ghl/contacts'
 
-export default function NewTenantPage() {
-  async function createTenant(formData: FormData) {
+interface PageProps {
+  params: { id: string }
+}
+
+export default async function EditTenantPage({ params }: PageProps) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch tenant
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('id', params.id)
+    .eq('landlord_id', user!.id)
+    .single()
+
+  if (!tenant) {
+    redirect('/tenants')
+  }
+
+  async function updateTenant(formData: FormData) {
     'use server'
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
     const tenantData = {
-      landlord_id: user!.id,
       first_name: formData.get('first_name') as string,
       last_name: formData.get('last_name') as string,
       email: formData.get('email') as string,
@@ -28,32 +45,33 @@ export default function NewTenantPage() {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { data: tenant, error } = await supabase
+    const { data: updatedTenant, error } = await supabase
       .from('tenants')
-      .insert(tenantData)
+      .update(tenantData)
+      .eq('id', params.id)
       .select()
       .single()
 
     if (error) {
-      redirect('/tenants/new?error=' + encodeURIComponent(error.message))
+      redirect(`/tenants/${params.id}/edit?error=` + encodeURIComponent(error.message))
     }
 
     // Sync to GHL
     try {
-      await syncTenantToGHL(tenant)
+      await syncTenantToGHL(updatedTenant)
     } catch (ghlError) {
       console.error('GHL sync error:', ghlError)
       // Continue even if GHL sync fails
     }
 
-    redirect('/tenants/' + tenant.id)
+    redirect('/tenants/' + params.id)
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/tenants">
+          <Link href={`/tenants/${params.id}`}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Link>
@@ -62,16 +80,17 @@ export default function NewTenantPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add New Tenant</CardTitle>
+          <CardTitle>Edit Tenant: {tenant.first_name} {tenant.last_name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createTenant} className="space-y-6">
+          <form action={updateTenant} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_name">First Name</Label>
                 <Input
                   id="first_name"
                   name="first_name"
+                  defaultValue={tenant.first_name}
                   placeholder="John"
                   required
                 />
@@ -82,6 +101,7 @@ export default function NewTenantPage() {
                 <Input
                   id="last_name"
                   name="last_name"
+                  defaultValue={tenant.last_name}
                   placeholder="Doe"
                   required
                 />
@@ -94,6 +114,7 @@ export default function NewTenantPage() {
                 id="email"
                 name="email"
                 type="email"
+                defaultValue={tenant.email}
                 placeholder="john.doe@example.com"
                 required
               />
@@ -105,13 +126,14 @@ export default function NewTenantPage() {
                 id="phone"
                 name="phone"
                 type="tel"
+                defaultValue={tenant.phone || ''}
                 placeholder="(555) 123-4567"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select name="status" defaultValue="applicant" required>
+              <Select name="status" defaultValue={tenant.status} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -131,6 +153,7 @@ export default function NewTenantPage() {
                   <Input
                     id="emergency_contact_name"
                     name="emergency_contact_name"
+                    defaultValue={tenant.emergency_contact_name || ''}
                     placeholder="Jane Doe"
                   />
                 </div>
@@ -141,6 +164,7 @@ export default function NewTenantPage() {
                     id="emergency_contact_phone"
                     name="emergency_contact_phone"
                     type="tel"
+                    defaultValue={tenant.emergency_contact_phone || ''}
                     placeholder="(555) 987-6543"
                   />
                 </div>
@@ -153,6 +177,7 @@ export default function NewTenantPage() {
                 id="notes"
                 name="notes"
                 rows={3}
+                defaultValue={tenant.notes || ''}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Any additional notes about this tenant..."
               />
@@ -160,9 +185,9 @@ export default function NewTenantPage() {
 
             <div className="flex gap-4">
               <Button type="button" variant="outline" asChild>
-                <Link href="/tenants">Cancel</Link>
+                <Link href={`/tenants/${params.id}`}>Cancel</Link>
               </Button>
-              <Button type="submit">Create Tenant</Button>
+              <Button type="submit">Save Changes</Button>
             </div>
           </form>
         </CardContent>
