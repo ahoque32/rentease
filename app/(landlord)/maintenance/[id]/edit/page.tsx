@@ -1,17 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import MaintenanceForm from './maintenance-form'
+import EditMaintenanceForm from './edit-maintenance-form'
 
-export default async function NewMaintenancePage({
-  searchParams,
-}: {
-  searchParams: { unit?: string }
-}) {
+interface PageProps {
+  params: { id: string }
+}
+
+export default async function EditMaintenancePage({ params }: PageProps) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
 
+  // Fetch existing request
+  const { data: request } = await supabase
+    .from('maintenance_requests')
+    .select('*')
+    .eq('id', params.id)
+    .eq('landlord_id', user.id)
+    .single()
+
+  if (!request) redirect('/maintenance')
+
+  // Fetch units
   const { data: properties } = await supabase
     .from('properties')
     .select('id')
@@ -25,19 +36,19 @@ export default async function NewMaintenancePage({
     .in('property_id', propertyIds.length ? propertyIds : ['__none__'])
     .order('name')
 
+  // Fetch tenants
   const { data: tenants } = await supabase
     .from('tenants')
     .select('id, first_name, last_name')
     .eq('landlord_id', user.id)
-    .in('status', ['applicant', 'active'])
     .order('last_name')
 
   return (
-    <MaintenanceForm
-      userId={user.id}
+    <EditMaintenanceForm
+      requestId={params.id}
+      request={request}
       units={(units as any) || []}
       tenants={tenants || []}
-      defaultUnit={searchParams.unit}
     />
   )
 }
