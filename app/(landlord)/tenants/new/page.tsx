@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { ArrowLeft } from 'lucide-react'
 import { syncTenantToGHL } from '@/lib/ghl/contacts'
 
@@ -28,7 +30,9 @@ export default function NewTenantPage() {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { data: tenant, error } = await supabase
+    const admin = createAdminClient()
+
+    const { data: tenant, error } = await admin
       .from('tenants')
       .insert(tenantData)
       .select()
@@ -162,7 +166,7 @@ export default function NewTenantPage() {
               <Button type="button" variant="outline" asChild>
                 <Link href="/tenants">Cancel</Link>
               </Button>
-              <Button type="submit">Create Tenant</Button>
+              <SubmitButton loadingText="Creating Tenant...">Create Tenant</SubmitButton>
             </div>
           </form>
         </CardContent>

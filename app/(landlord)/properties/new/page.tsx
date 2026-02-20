@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { ArrowLeft } from 'lucide-react'
 
 export default function NewPropertyPage() {
@@ -27,7 +29,9 @@ export default function NewPropertyPage() {
       notes: formData.get('notes') as string || null,
     }
 
-    const { data, error } = await supabase
+    const admin = createAdminClient()
+
+    const { data, error } = await admin
       .from('properties')
       .insert(propertyData)
       .select()
@@ -134,7 +138,7 @@ export default function NewPropertyPage() {
               <Button type="button" variant="outline" asChild>
                 <Link href="/properties">Cancel</Link>
               </Button>
-              <Button type="submit">Create Property</Button>
+              <SubmitButton loadingText="Creating Property...">Create Property</SubmitButton>
             </div>
           </form>
         </CardContent>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -63,9 +64,9 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
   async function archiveProperty() {
     'use server'
-    const supabase = createClient()
+    const admin = createAdminClient()
     
-    const { error } = await supabase
+    const { error } = await admin
       .from('properties')
       .update({ archived: true })
       .eq('id', params.id)

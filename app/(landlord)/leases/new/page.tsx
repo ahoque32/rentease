@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -6,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SubmitButton } from '@/components/ui/submit-button'
 import { ArrowLeft } from 'lucide-react'
 
 export default async function NewLeasePage({
@@ -43,11 +45,13 @@ export default async function NewLeasePage({
   async function createLease(formData: FormData) {
     'use server'
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const admin = createAdminClient()
+    
+    // Get landlord_id from the form (passed from client)
+    const landlordId = formData.get('landlord_id') as string
 
     const leaseData = {
-      landlord_id: user!.id,
+      landlord_id: landlordId,
       unit_id: formData.get('unit_id') as string,
       status: 'active',
       start_date: formData.get('start_date') as string,
@@ -61,7 +65,7 @@ export default async function NewLeasePage({
     }
 
     // Create lease
-    const { data: lease, error: leaseError } = await supabase
+    const { data: lease, error: leaseError } = await admin
       .from('leases')
       .insert(leaseData)
       .select()
@@ -74,7 +78,7 @@ export default async function NewLeasePage({
     // Link tenant to lease
     const tenantId = formData.get('tenant_id') as string
     if (tenantId) {
-      const { error: linkError } = await supabase
+      const { error: linkError } = await admin
         .from('lease_tenants')
         .insert({
           lease_id: lease.id,
@@ -87,7 +91,7 @@ export default async function NewLeasePage({
       }
 
       // Update unit status to occupied
-      await supabase
+      await admin
         .from('units')
         .update({ status: 'occupied' })
         .eq('id', leaseData.unit_id)
@@ -113,6 +117,7 @@ export default async function NewLeasePage({
         </CardHeader>
         <CardContent>
           <form action={createLease} className="space-y-6">
+            <input type="hidden" name="landlord_id" value={user!.id} />
             <div className="space-y-2">
               <Label htmlFor="unit_id">Unit</Label>
               <Select name="unit_id" defaultValue={searchParams.unit} required>
@@ -249,7 +254,7 @@ export default async function NewLeasePage({
               <Button type="button" variant="outline" asChild>
                 <Link href="/leases">Cancel</Link>
               </Button>
-              <Button type="submit">Create Lease</Button>
+              <SubmitButton loadingText="Creating Lease...">Create Lease</SubmitButton>
             </div>
           </form>
         </CardContent>

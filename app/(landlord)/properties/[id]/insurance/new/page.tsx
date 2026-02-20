@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -48,7 +49,9 @@ export default async function NewInsurancePage({ params }: PageProps) {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { error } = await supabase
+    const admin = createAdminClient()
+
+    const { error } = await admin
       .from('insurance_policies')
       .insert(insuranceData)
 

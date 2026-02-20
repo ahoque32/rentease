@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -32,8 +33,6 @@ export default async function EditTenantPage({ params }: PageProps) {
   async function updateTenant(formData: FormData) {
     'use server'
 
-    const supabase = createClient()
-
     const tenantData = {
       first_name: formData.get('first_name') as string,
       last_name: formData.get('last_name') as string,
@@ -45,7 +44,9 @@ export default async function EditTenantPage({ params }: PageProps) {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const { data: updatedTenant, error } = await supabase
+    const admin = createAdminClient()
+
+    const { data: updatedTenant, error } = await admin
       .from('tenants')
       .update(tenantData)
       .eq('id', params.id)

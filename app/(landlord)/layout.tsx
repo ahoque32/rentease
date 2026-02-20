@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { MobileNav } from '@/components/shared/MobileNav'
@@ -25,7 +26,8 @@ export default async function LandlordLayout({
 
   if (!landlord) {
     // Create landlord profile if it doesn't exist
-    await supabase.from('landlords').insert({
+    const admin = createAdminClient()
+    await admin.from('landlords').insert({
       id: user.id,
       full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Landlord',
       email: user.email!,
