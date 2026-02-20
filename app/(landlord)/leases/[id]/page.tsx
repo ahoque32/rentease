@@ -5,17 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  ArrowLeft, 
-  Home, 
-  DollarSign, 
-  Calendar, 
-  Users, 
+import {
+  ArrowLeft,
+  Home,
+  DollarSign,
+  Calendar,
+  Users,
   FileText,
   Edit,
   Upload,
   CheckCircle
 } from 'lucide-react'
+import DeleteLeaseButton from './delete-lease-button'
 
 interface PageProps {
   params: { id: string }
@@ -93,6 +94,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
               Edit
             </Link>
           </Button>
+          <DeleteLeaseButton leaseId={params.id} />
         </div>
       </div>
 

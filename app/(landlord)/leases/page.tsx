@@ -8,7 +8,7 @@ export default async function LeasesPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: leases } = await supabase
+  const { data: leases, error } = await supabase
     .from('leases')
     .select(`
       *,
@@ -17,6 +17,10 @@ export default async function LeasesPage() {
     `)
     .eq('landlord_id', user!.id)
     .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Leases query error:', error)
+  }
 
   return (
     <div className="space-y-6">
@@ -33,7 +37,7 @@ export default async function LeasesPage() {
         </Button>
       </div>
 
-      {leases?.length === 0 ? (
+      {!leases || leases.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
