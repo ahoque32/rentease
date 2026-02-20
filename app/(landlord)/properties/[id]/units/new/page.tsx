@@ -14,8 +14,8 @@ interface PageProps {
 }
 
 export default async function NewUnitPage({ params }: PageProps) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const _supabase = createClient()
+  const { data: { user } } = await _supabase.auth.getUser()
 
   // Verify property exists and belongs to landlord
   const { data: property } = await supabase
@@ -32,8 +32,6 @@ export default async function NewUnitPage({ params }: PageProps) {
   async function createUnit(formData: FormData) {
     'use server'
 
-    const supabase = createClient()
-
     const unitData = {
       property_id: params.id,
       name: formData.get('name') as string,
@@ -46,7 +44,7 @@ export default async function NewUnitPage({ params }: PageProps) {
 
     const admin = createAdminClient()
 
-    const { data, error } = await admin
+    const { error } = await admin
       .from('units')
       .insert(unitData)
       .select()

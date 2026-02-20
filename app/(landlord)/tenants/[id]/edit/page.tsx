@@ -33,8 +33,6 @@ export default async function EditTenantPage({ params }: PageProps) {
   async function updateTenant(formData: FormData) {
     'use server'
 
-    const supabase = createClient()
-
     const tenantData = {
       first_name: formData.get('first_name') as string,
       last_name: formData.get('last_name') as string,
