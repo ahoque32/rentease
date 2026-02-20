@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft } from 'lucide-react'
+import { SubmitButton } from '@/components/ui/submit-button'
 
 export default async function NewLeasePage({
   searchParams,
@@ -253,7 +253,7 @@ export default async function NewLeasePage({
               <Button type="button" variant="outline" asChild>
                 <Link href="/leases">Cancel</Link>
               </Button>
-              <Button type="submit">Create Lease</Button>
+              <SubmitButton loadingText="Creating Lease...">Create Lease</SubmitButton>
             </div>
           </form>
         </CardContent>
