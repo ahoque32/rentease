@@ -44,11 +44,13 @@ export default async function NewLeasePage({
   async function createLease(formData: FormData) {
     'use server'
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const admin = createAdminClient()
+    
+    // Get landlord_id from the form (passed from client)
+    const landlordId = formData.get('landlord_id') as string
 
     const leaseData = {
-      landlord_id: user!.id,
+      landlord_id: landlordId,
       unit_id: formData.get('unit_id') as string,
       status: 'active',
       start_date: formData.get('start_date') as string,
@@ -60,8 +62,6 @@ export default async function NewLeasePage({
       rent_due_day: parseInt(formData.get('rent_due_day') as string) || 1,
       notes: (formData.get('notes') as string) || null,
     }
-
-    const admin = createAdminClient()
 
     // Create lease
     const { data: lease, error: leaseError } = await admin
@@ -116,6 +116,7 @@ export default async function NewLeasePage({
         </CardHeader>
         <CardContent>
           <form action={createLease} className="space-y-6">
+            <input type="hidden" name="landlord_id" value={user!.id} />
             <div className="space-y-2">
               <Label htmlFor="unit_id">Unit</Label>
               <Select name="unit_id" defaultValue={searchParams.unit} required>
