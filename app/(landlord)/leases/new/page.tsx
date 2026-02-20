@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SubmitButton } from '@/components/ui/submit-button'
+import { ArrowLeft } from 'lucide-react'
 
 export default async function NewLeasePage({
   searchParams,
