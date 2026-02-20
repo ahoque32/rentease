@@ -14,8 +14,8 @@ interface PageProps {
 }
 
 export default async function NewUnitPage({ params }: PageProps) {
-  const _supabase = createClient()
-  const { data: { user } } = await _supabase.auth.getUser()
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Verify property exists and belongs to landlord
   const { data: property } = await supabase
