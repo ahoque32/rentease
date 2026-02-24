@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, ClipboardList, ExternalLink } from 'lucide-react'
+import { Plus, ClipboardList } from 'lucide-react'
+import CopyButton from '@/components/shared/copy-button'
 
 export default async function ScreeningListPage() {
   const supabase = createClient()
@@ -117,18 +118,7 @@ export default async function ScreeningListPage() {
                       </div>
 
                       <div className="flex flex-col items-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            navigator.clipboard.writeText(applyUrl)
-                          }}
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Copy Link
-                        </Button>
+                        <CopyButton value={applyUrl} />
                       </div>
                     </div>
                   </CardContent>
