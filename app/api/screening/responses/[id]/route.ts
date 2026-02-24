@@ -97,7 +97,8 @@ export async function GET(
     }
 
     // Verify landlord owns this survey
-    if (response.screening_surveys?.landlord_id !== user.id) {
+    const survey = Array.isArray(response.screening_surveys) ? response.screening_surveys[0] : response.screening_surveys
+    if (survey?.landlord_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
@@ -138,7 +139,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Response not found' }, { status: 404 })
     }
 
-    if (existing.screening_surveys?.landlord_id !== user.id) {
+    const existingSurvey = Array.isArray(existing.screening_surveys) ? existing.screening_surveys[0] : existing.screening_surveys
+    if (existingSurvey?.landlord_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
