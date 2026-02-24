@@ -73,9 +73,11 @@ export default async function LeasesPage() {
                         ? 'bg-green-100 text-green-800' 
                         : lease.status === 'expiring'
                         ? 'bg-yellow-100 text-yellow-800'
+                        : lease.status === 'pending_signatures'
+                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {lease.status}
+                      {lease.status === 'pending_signatures' ? 'Pending Signatures' : lease.status}
                     </span>
                   </div>
                 </CardContent>
