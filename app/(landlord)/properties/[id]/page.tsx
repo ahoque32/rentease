@@ -17,7 +17,8 @@ import {
   Receipt,
   Edit,
   Archive,
-  Plus
+  Plus,
+  ExternalLink
 } from 'lucide-react'
 
 interface PageProps {
@@ -132,6 +133,53 @@ export default async function PropertyDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Zillow Section */}
+      {property.zillow_url && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ExternalLink className="w-5 h-5" />
+              Zillow Listing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <a 
+              href={property.zillow_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center gap-2"
+            >
+              View on Zillow
+              <ExternalLink className="w-4 h-4" />
+            </a>
+            <div className="border rounded-lg overflow-hidden">
+              <iframe
+                src={property.zillow_url}
+                width="100%"
+                height="600"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Zillow Listing"
+                sandbox="allow-scripts allow-same-origin allow-popups"
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Note: Zillow embed may be blocked by Zillow&apos;s security settings. 
+              <a 
+                href={property.zillow_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline ml-1"
+              >
+                Open directly on Zillow
+              </a>
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="units" className="space-y-4">

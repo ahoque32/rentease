@@ -27,6 +27,7 @@ export default function NewPropertyPage() {
       zip: formData.get('zip') as string,
       type: formData.get('type') as string,
       notes: formData.get('notes') as string || null,
+      zillow_url: formData.get('zillow_url') as string || null,
     }
 
     const admin = createAdminClient()
@@ -121,6 +122,17 @@ export default function NewPropertyPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zillow_url">Zillow Listing URL (Optional)</Label>
+              <Input
+                id="zillow_url"
+                name="zillow_url"
+                type="url"
+                placeholder="https://www.zillow.com/homedetails/..."
+              />
+              <p className="text-xs text-gray-500">Add a Zillow listing URL to display property details and embed the listing.</p>
             </div>
 
             <div className="space-y-2">

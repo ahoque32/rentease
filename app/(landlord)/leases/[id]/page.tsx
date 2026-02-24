@@ -17,6 +17,7 @@ import {
   CheckCircle
 } from 'lucide-react'
 import DeleteLeaseButton from './delete-lease-button'
+import SignaturePanel from './signature-panel'
 
 interface PageProps {
   params: { id: string }
@@ -53,6 +54,14 @@ export default async function LeaseDetailPage({ params }: PageProps) {
   const unit = (lease as any).units
   const property = unit?.properties
 
+  // Fetch signatures
+  const { data: signaturesData } = await supabase
+    .from('signatures')
+    .select('*')
+    .eq('lease_id', params.id)
+  
+  const signatures = signaturesData || []
+
   // Calculate lease stats
   const totalDue = rentSchedule?.reduce((sum, r) => sum + (r.amount_due || 0), 0) || 0
   const totalPaid = rentSchedule?.reduce((sum, r) => sum + (r.amount_paid || 0), 0) || 0
@@ -75,9 +84,10 @@ export default async function LeaseDetailPage({ params }: PageProps) {
             <Badge variant={
               lease.status === 'active' ? 'default' :
               lease.status === 'expiring' ? 'secondary' :
+              lease.status === 'pending_signatures' ? 'outline' :
               'outline'
             }>
-              {lease.status}
+              {lease.status === 'pending_signatures' ? 'Pending Signatures' : lease.status}
             </Badge>
           </div>
         </div>
@@ -247,6 +257,15 @@ export default async function LeaseDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Signature Panel */}
+      <SignaturePanel
+        leaseId={params.id}
+        signatures={signatures}
+        isLandlord={true}
+        isTenant={false}
+        leaseStatus={lease.status}
+      />
 
       {/* Rent Schedule */}
       <Card>
