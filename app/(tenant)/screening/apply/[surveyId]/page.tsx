@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Home, Building2, Loader2, CheckCircle } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Building2, Loader2, CheckCircle } from 'lucide-react'
 
 interface Survey {
   id: string
@@ -196,7 +197,7 @@ export default function ScreeningApplicationPage() {
 
         {/* Application Form */}
         <form onSubmit={handleSubmit}>
-          <div className="space-y-6">
+          <fieldset className="space-y-6" disabled={submitting}>
             {/* Personal Information */}
             <Card>
               <CardHeader>
@@ -542,12 +543,11 @@ export default function ScreeningApplicationPage() {
                 {formData.has_criminal_record && (
                   <div className="space-y-2 pl-7">
                     <Label htmlFor="criminal_record_details">Please provide details</Label>
-                    <textarea
+                    <Textarea
                       id="criminal_record_details"
                       value={formData.criminal_record_details}
                       onChange={(e) => handleChange('criminal_record_details', e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   </div>
                 )}
@@ -562,12 +562,11 @@ export default function ScreeningApplicationPage() {
               <CardContent>
                 <div className="space-y-2">
                   <Label htmlFor="additional_comments">Additional Comments (Optional)</Label>
-                  <textarea
+                  <Textarea
                     id="additional_comments"
                     value={formData.additional_comments}
                     onChange={(e) => handleChange('additional_comments', e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     placeholder="Any additional information you'd like to share..."
                   />
                 </div>
@@ -576,7 +575,7 @@ export default function ScreeningApplicationPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" role="alert">
                 {error}
               </div>
             )}
@@ -598,7 +597,7 @@ export default function ScreeningApplicationPage() {
                 )}
               </Button>
             </div>
-          </div>
+          </fieldset>
         </form>
       </div>
     </div>

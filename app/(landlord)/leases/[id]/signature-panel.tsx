@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, PenLine, AlertCircle } from 'lucide-react'
+import { CheckCircle, PenLine, AlertCircle, Loader2 } from 'lucide-react'
 
 interface Signature {
   id: string
@@ -44,6 +44,7 @@ export default function SignaturePanel({
   
   const canSign = (isLandlord && !landlordSignature) || (isTenant && !tenantSignature)
   const hasSigned = (isLandlord && !!landlordSignature) || (isTenant && !!tenantSignature)
+  const signedCount = useMemo(() => signatures.filter(s => s.signer_role === 'landlord' || s.signer_role === 'tenant').length, [signatures])
 
   async function handleSign() {
     if (!signerName.trim()) {
@@ -106,6 +107,16 @@ export default function SignaturePanel({
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-500">Lease Status:</span>
           {getStatusBadge()}
+        </div>
+
+        <div className="space-y-2" aria-live="polite">
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Signing progress</span>
+            <span>{signedCount}/2 completed</span>
+          </div>
+          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-full bg-blue-600 transition-all" style={{ width: `${(signedCount / 2) * 100}%` }} />
+          </div>
         </div>
 
         {/* Signatures List */}
@@ -189,7 +200,7 @@ export default function SignaturePanel({
               disabled={loading || !signerName.trim()}
               className="w-full"
             >
-              {loading ? 'Signing...' : 'Sign Lease Agreement'}
+              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing...</> : 'Sign Lease Agreement'}
             </Button>
           </div>
         )}
