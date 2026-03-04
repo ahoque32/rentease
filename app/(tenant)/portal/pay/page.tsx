@@ -1,15 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PaymentForm } from '@/components/portal/PaymentForm'
+import { Button } from '@/components/ui/button'
 
 interface PageProps {
-  searchParams: { token?: string; schedule?: string }
+  searchParams: { token?: string; schedule?: string; status?: string }
 }
 
 export default async function TenantPayPage({ searchParams }: PageProps) {
   const supabase = createClient()
+  const admin = createAdminClient()
   const token = searchParams.token
+  const paymentStatus = searchParams.status
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -34,7 +39,7 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
   }
 
   if (!tenant && token) {
-    const { data: tenantByToken } = await supabase
+    const { data: tenantByToken } = await admin
       .from('tenants')
       .select(`
         id, first_name, last_name,
@@ -64,23 +69,20 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
 
   // Get unpaid rent schedule entries for all leases
   const leaseIds = leases.map((l: any) => l.id)
-  const { data: unpaidSchedule } = await supabase
+  const db = user ? supabase : admin
+  const { data: unpaidSchedule } = await db
     .from('rent_schedule')
     .select('*')
     .in('lease_id', leaseIds)
     .in('status', ['due', 'overdue', 'partial', 'upcoming'])
     .order('due_date')
 
-  // Check if landlord has Stripe connected
-  const landlordId = leases[0]?.landlord_id
-  let stripeReady = false
-  if (landlordId) {
-    const { data: landlord } = await supabase
-      .from('landlords')
-      .select('stripe_onboarding_complete')
-      .eq('id', landlordId)
-      .single()
-    stripeReady = landlord?.stripe_onboarding_complete || false
+  const tokenQuery = token ? `?token=${token}` : ''
+
+  function scheduleBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' {
+    if (status === 'paid') return 'default'
+    if (status === 'overdue') return 'destructive'
+    return 'secondary'
   }
 
   return (
@@ -90,11 +92,21 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
         <p className="text-gray-600">Hi {tenant.first_name}, select a payment to make.</p>
       </div>
 
-      {!stripeReady && (
-        <Card className="border-yellow-200 bg-yellow-50">
+      {paymentStatus === 'success' && (
+        <Card className="border-green-200 bg-green-50">
           <CardContent className="p-4">
-            <p className="text-yellow-800 text-sm">
-              Online payments are not yet available. Your landlord needs to connect their Stripe account.
+            <p className="text-green-800 text-sm">
+              Payment submitted successfully. It may take a few moments to appear in your payment history.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {paymentStatus === 'cancelled' && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <p className="text-red-700 text-sm">
+              Payment was canceled. You can try again anytime.
             </p>
           </CardContent>
         </Card>
@@ -119,7 +131,7 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
                     <CardTitle className="text-lg">
                       {lease?.units?.properties?.name} — {lease?.units?.name}
                     </CardTitle>
-                    <Badge variant={schedule.status === 'overdue' ? 'destructive' : 'outline'}>
+                    <Badge variant={scheduleBadgeVariant(schedule.status)}>
                       {schedule.status}
                     </Badge>
                   </div>
@@ -127,7 +139,9 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
                 <CardContent>
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm text-gray-500">Due: {schedule.due_date}</p>
+                      <p className="text-sm text-gray-500">
+                        Due: {new Date(schedule.due_date).toLocaleDateString()}
+                      </p>
                       {schedule.late_fee_applied > 0 && (
                         <p className="text-sm text-red-600">
                           Late fee: ${schedule.late_fee_applied.toFixed(2)}
@@ -137,11 +151,11 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
                     <p className="text-2xl font-bold">${amountOwed.toFixed(2)}</p>
                   </div>
 
-                  {stripeReady && amountOwed > 0 && (
+                  {amountOwed > 0 && (
                     <PaymentForm
                       rentScheduleId={schedule.id}
                       amount={amountOwed}
-                      stripePublishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
+                      token={token}
                     />
                   )}
                 </CardContent>
@@ -150,6 +164,12 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
           })}
         </div>
       )}
+
+      <div className="pt-2">
+        <Button asChild variant="outline">
+          <Link href={`/portal/payments${tokenQuery}`}>View Payment History</Link>
+        </Button>
+      </div>
     </div>
   )
 }

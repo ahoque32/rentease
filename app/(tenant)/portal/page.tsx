@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { DollarSign, Wrench, FileText } from 'lucide-react'
+import { DollarSign, Wrench, FileText, CreditCard } from 'lucide-react'
 
 interface PageProps {
   searchParams: { token?: string }
@@ -10,6 +11,7 @@ interface PageProps {
 
 export default async function TenantPortalPage({ searchParams }: PageProps) {
   const supabase = createClient()
+  const admin = createAdminClient()
 
   const token = searchParams.token
   const {
@@ -37,7 +39,7 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
   }
 
   if (!tenant && token) {
-    const { data: tenantByToken } = await supabase
+    const { data: tenantByToken } = await admin
       .from('tenants')
       .select(`
         *,
@@ -66,6 +68,60 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
   const currentLease = (tenant as any).lease_tenants?.[0]?.leases
   const unit = currentLease?.units
   const property = unit?.properties
+  const tenantId = (tenant as any).id
+  const leaseId = currentLease?.id
+
+  let unpaidSchedule: any[] = []
+  let recentPayments: any[] = []
+
+  if (leaseId) {
+    const db = user ? supabase : admin
+    const [{ data: schedule }, { data: payments }] = await Promise.all([
+      db
+        .from('rent_schedule')
+        .select('id, due_date, amount_due, amount_paid, late_fee_applied, status')
+        .eq('lease_id', leaseId)
+        .in('status', ['upcoming', 'due', 'partial', 'overdue'])
+        .order('due_date', { ascending: true }),
+      db
+        .from('payments')
+        .select('id, amount, status, type, method, paid_at, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(6),
+    ])
+
+    unpaidSchedule = schedule || []
+    recentPayments = payments || []
+  }
+
+  const totalBalanceDue = unpaidSchedule.reduce((sum, item) => {
+    const owed = Number(item.amount_due || 0) + Number(item.late_fee_applied || 0) - Number(item.amount_paid || 0)
+    return sum + Math.max(0, owed)
+  }, 0)
+
+  const nextPayment = unpaidSchedule.find((item) => {
+    const owed = Number(item.amount_due || 0) + Number(item.late_fee_applied || 0) - Number(item.amount_paid || 0)
+    return owed > 0
+  })
+
+  const tokenQuery = linkToken ? `?token=${linkToken}` : ''
+
+  function formatDate(value?: string | null) {
+    if (!value) return 'N/A'
+    return new Date(value).toLocaleDateString()
+  }
+
+  function paymentBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' {
+    if (status === 'completed') return 'default'
+    if (status === 'pending') return 'secondary'
+    return 'destructive'
+  }
+
+  function paymentBadgeLabel(status: string) {
+    if (status === 'completed') return 'paid'
+    return status
+  }
 
   return (
     <div className="space-y-6">
@@ -74,8 +130,32 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
         <p className="text-gray-600">{property?.name} - {unit?.name}</p>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm text-gray-500">Current Balance Due</p>
+            <p className="text-3xl font-bold text-gray-900">${totalBalanceDue.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-sm text-gray-500">Next Payment</p>
+            {nextPayment ? (
+              <div>
+                <p className="text-xl font-bold text-gray-900">
+                  ${(Number(nextPayment.amount_due || 0) + Number(nextPayment.late_fee_applied || 0) - Number(nextPayment.amount_paid || 0)).toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-600">Due {formatDate(nextPayment.due_date)}</p>
+              </div>
+            ) : (
+              <p className="text-lg font-medium text-green-600">No payment due</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-4">
-        <Link href={linkToken ? `/portal/pay?token=${linkToken}` : '/portal/pay'}>
+        <Link href={`/portal/pay${tokenQuery}`}>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -92,7 +172,23 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
           </Card>
         </Link>
 
-        <Link href={linkToken ? `/portal/maintenance?token=${linkToken}` : '/portal/maintenance'}>
+        <Link href={`/portal/payments${tokenQuery}`}>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">Payment History</h3>
+                  <p className="text-sm text-gray-600">View all rent payments and receipts</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href={`/portal/maintenance${tokenQuery}`}>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -108,7 +204,7 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
           </Card>
         </Link>
 
-        <Link href={linkToken ? `/portal/lease?token=${linkToken}` : '/portal/lease'}>
+        <Link href={`/portal/lease${tokenQuery}`}>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -124,6 +220,60 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
           </Card>
         </Link>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lease Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2">
+          <div>
+            <p className="text-sm text-gray-500">Property</p>
+            <p className="font-medium">{property?.name || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Unit</p>
+            <p className="font-medium">{unit?.name || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Monthly Rent</p>
+            <p className="font-medium">${Number(currentLease?.monthly_rent || 0).toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Lease Dates</p>
+            <p className="font-medium">{formatDate(currentLease?.start_date)} - {formatDate(currentLease?.end_date)}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Recent Payments</CardTitle>
+          <Link href={`/portal/payments${tokenQuery}`} className="text-sm text-blue-600 hover:underline">
+            View all
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {recentPayments.length === 0 ? (
+            <p className="text-sm text-gray-600">No payments yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {recentPayments.map((payment) => (
+                <div key={payment.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                  <div>
+                    <p className="font-medium">${Number(payment.amount || 0).toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">
+                      {payment.type} • {payment.method || 'card'} • {formatDate(payment.paid_at || payment.created_at)}
+                    </p>
+                  </div>
+                  <Badge variant={paymentBadgeVariant(payment.status)}>
+                    {paymentBadgeLabel(payment.status)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
