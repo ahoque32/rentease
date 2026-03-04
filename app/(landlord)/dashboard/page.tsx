@@ -93,24 +93,28 @@ export default async function DashboardPage() {
       value: properties?.length || 0,
       icon: Building2,
       href: '/properties',
+      gradient: 'from-blue-500 to-indigo-500',
     },
     {
       title: 'Total Units',
       value: totalUnits,
       icon: Home,
       href: '/properties',
+      gradient: 'from-emerald-500 to-cyan-500',
     },
     {
-      title: 'Occupied vs Vacant',
+      title: 'Occupied / Vacant',
       value: `${occupiedUnits} / ${vacantUnits}`,
       icon: Users,
       href: '/properties',
+      gradient: 'from-violet-500 to-pink-500',
     },
     {
       title: 'Active Leases',
       value: activeLeases.length,
       icon: FileText,
       href: '/leases',
+      gradient: 'from-rose-500 to-orange-400',
     },
   ]
 
@@ -140,13 +144,15 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {summaryCards.map((card) => (
           <Link key={card.title} href={card.href}>
-            <Card className="h-full transition-shadow hover:shadow-md">
-              <CardContent className="p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <card.icon className="h-5 w-5 text-blue-600" />
-                  <p className="text-xl font-bold text-gray-900">{card.value}</p>
+            <Card className="group h-full overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
+              <div className={`bg-gradient-to-br ${card.gradient} px-5 py-4`}>
+                <div className="flex items-center justify-between">
+                  <card.icon className="h-5 w-5 text-white/80" />
+                  <p className="text-2xl font-bold text-white">{card.value}</p>
                 </div>
-                <p className="text-sm text-gray-600">{card.title}</p>
+              </div>
+              <CardContent className="px-5 py-3">
+                <p className="text-sm font-medium text-gray-600">{card.title}</p>
               </CardContent>
             </Card>
           </Link>
@@ -172,7 +178,7 @@ export default async function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {maintenanceRequests.map((request) => (
-                  <Link key={request.id} href={`/maintenance/${request.id}`} className="block rounded-lg border p-3 hover:bg-gray-50">
+                  <Link key={request.id} href={`/maintenance/${request.id}`} className="block rounded-xl border border-white/30 bg-white/40 p-3 transition-all duration-200 hover:bg-white/70 hover:shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-medium text-gray-900">{request.title}</p>
@@ -212,7 +218,7 @@ export default async function DashboardPage() {
                   const balance = Number(item.amount_due || 0) + Number(item.late_fee_applied || 0) - Number(item.amount_paid || 0)
 
                   return (
-                    <div key={item.id} className="rounded-lg border p-3">
+                    <div key={item.id} className="rounded-xl border border-white/30 bg-white/40 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-gray-900">

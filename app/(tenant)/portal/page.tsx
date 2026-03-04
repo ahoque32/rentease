@@ -146,26 +146,32 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-gray-500">Current Balance Due</p>
-            <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalBalanceDue)}</p>
-          </CardContent>
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-br from-rose-500 to-orange-400 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-white/80" />
+              <p className="text-sm font-medium text-white/90">Current Balance Due</p>
+            </div>
+            <p className="mt-1 text-3xl font-bold text-white">{formatCurrency(totalBalanceDue)}</p>
+          </div>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-gray-500">Next Payment</p>
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-500 px-6 py-4">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-white/80" />
+              <p className="text-sm font-medium text-white/90">Next Payment</p>
+            </div>
             {nextPayment ? (
-              <div>
-                <p className="text-xl font-bold text-gray-900">
+              <div className="mt-1">
+                <p className="text-2xl font-bold text-white">
                   {formatCurrency(Number(nextPayment.amount_due || 0) + Number(nextPayment.late_fee_applied || 0) - Number(nextPayment.amount_paid || 0))}
                 </p>
-                <p className="text-sm text-gray-600">Due {formatDate(nextPayment.due_date)}</p>
+                <p className="text-sm text-white/80">Due {formatDate(nextPayment.due_date)}</p>
               </div>
             ) : (
-              <p className="text-lg font-medium text-green-600">No payment due</p>
+              <p className="mt-1 text-lg font-medium text-white">No payment due ✓</p>
             )}
-          </CardContent>
+          </div>
         </Card>
       </div>
 

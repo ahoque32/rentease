@@ -33,7 +33,7 @@ export function Sidebar({ newMaintenanceCount = 0 }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-64 border-r border-white/30 bg-white/70 backdrop-blur-xl shadow-lg shadow-black/5">
+    <div className="fixed inset-y-0 left-0 z-50 w-64 border-r border-white/20 bg-white/60 backdrop-blur-2xl shadow-xl shadow-black/5">
       <div className="flex h-16 items-center border-b border-white/30 px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
@@ -53,10 +53,10 @@ export function Sidebar({ newMaintenanceCount = 0 }: SidebarProps) {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-blue-100/80 text-blue-700'
-                  : 'text-gray-700 hover:bg-white/80 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-700 shadow-sm shadow-blue-500/10 ring-1 ring-blue-500/15'
+                  : 'text-gray-600 hover:bg-white/70 hover:text-gray-900 hover:shadow-sm'
               )}
             >
               <item.icon className={cn('h-5 w-5', isActive ? 'text-blue-600' : 'text-gray-500')} />
