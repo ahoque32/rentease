@@ -39,7 +39,7 @@ export default function TenantLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -90,12 +90,20 @@ export default function TenantLoginPage() {
         </CardContent>
 
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600 text-center">
-            Landlord account?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline">
-              Log in here
-            </Link>
-          </p>
+          <div className="text-sm text-gray-600 text-center space-y-2">
+            <p>
+              Don&apos;t have an account?{' '}
+              <Link href="/tenant-register" className="text-blue-600 hover:underline">
+                Register here
+              </Link>
+            </p>
+            <p>
+              Landlord account?{' '}
+              <Link href="/login" className="text-blue-600 hover:underline">
+                Log in here
+              </Link>
+            </p>
+          </div>
         </CardFooter>
       </Card>
     </div>

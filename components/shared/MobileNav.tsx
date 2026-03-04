@@ -33,7 +33,7 @@ export function MobileNav({ newMaintenanceCount = 0 }: MobileNavProps) {
   const pathname = usePathname()
 
   return (
-    <div className="safe-area-pb border-t border-gray-200 bg-white">
+    <div className="safe-area-pb border-t border-white/30 bg-white/80 backdrop-blur-md">
       <nav className="flex items-center justify-around px-2 py-2">
         {navigation.slice(0, 4).map((item) => {
           const isActive = pathname.startsWith(item.href)
@@ -43,7 +43,7 @@ export function MobileNav({ newMaintenanceCount = 0 }: MobileNavProps) {
               href={item.href}
               className={cn(
                 'flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-3 py-2',
-                isActive ? 'text-blue-600' : 'text-gray-500'
+                isActive ? 'bg-white/70 text-blue-700' : 'text-gray-600'
               )}
             >
               <item.icon className={cn('h-5 w-5', isActive ? 'text-blue-600' : 'text-gray-500')} />
@@ -54,13 +54,13 @@ export function MobileNav({ newMaintenanceCount = 0 }: MobileNavProps) {
 
         <Sheet>
           <SheetTrigger asChild>
-            <button className="relative flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-gray-500">
+            <button className="relative flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-gray-600">
               <Menu className="h-5 w-5" />
               <span className="text-xs font-medium">More</span>
               {newMaintenanceCount > 0 && <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-red-500" />}
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto">
+          <SheetContent side="bottom" className="h-auto border-white/30 bg-white/90 backdrop-blur-xl">
             <div className="grid grid-cols-3 gap-4 p-4">
               {navigation.map((item) => {
                 const isActive = pathname.startsWith(item.href)
@@ -73,8 +73,8 @@ export function MobileNav({ newMaintenanceCount = 0 }: MobileNavProps) {
                     className={cn(
                       'relative flex flex-col items-center gap-2 rounded-xl p-4 transition-colors',
                       isActive
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-100/80 text-blue-700'
+                        : 'bg-white/70 text-gray-700 hover:bg-white/90'
                     )}
                   >
                     <item.icon className="h-6 w-6" />
