@@ -17,6 +17,118 @@ function getServiceSupabase() {
   )
 }
 
+function resolveMethod(methodTypes?: string[] | null) {
+  if (methodTypes?.includes('us_bank_account')) return 'ach'
+  return 'card'
+}
+
+async function maybeSendReceiptEmail(supabase: ReturnType<typeof getServiceSupabase>, tenantId: string, leaseId: string, amount: number) {
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('first_name, last_name, email')
+    .eq('id', tenantId)
+    .single()
+
+  if (!tenant?.email) return
+
+  const { data: lease } = await supabase
+    .from('leases')
+    .select('units(name, properties(name))')
+    .eq('id', leaseId)
+    .single()
+
+  const propertyName = (lease as any)?.units?.properties?.name || 'Your Property'
+  const receipt = paymentReceiptEmail(
+    `${tenant.first_name} ${tenant.last_name}`,
+    amount,
+    new Date().toLocaleDateString(),
+    propertyName
+  )
+
+  try {
+    await sendEmail({ to: tenant.email, ...receipt })
+  } catch (e) {
+    console.error('Failed to send receipt:', e)
+  }
+}
+
+async function recordSuccessfulPayment(args: {
+  supabase: ReturnType<typeof getServiceSupabase>
+  rentScheduleId?: string
+  leaseId?: string
+  tenantId?: string
+  paymentIntentId?: string
+  amount: number
+  method: string
+}) {
+  const { supabase, rentScheduleId, leaseId, tenantId, paymentIntentId, amount, method } = args
+
+  if (!rentScheduleId || !leaseId || !tenantId || !paymentIntentId) {
+    return
+  }
+
+  const { data: existing } = await supabase
+    .from('payments')
+    .select('id, status')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .maybeSingle()
+
+  const { data: schedule } = await supabase
+    .from('rent_schedule')
+    .select('id, amount_due, amount_paid, late_fee_applied, due_date')
+    .eq('id', rentScheduleId)
+    .single()
+
+  if (schedule) {
+    const currentPaid = Number(schedule.amount_paid || 0)
+    const totalDue = Number(schedule.amount_due || 0) + Number(schedule.late_fee_applied || 0)
+    const newPaid = Math.min(totalDue, currentPaid + Number(amount || 0))
+    const status = newPaid >= totalDue ? 'paid' : 'partial'
+
+    await supabase
+      .from('rent_schedule')
+      .update({ amount_paid: newPaid, status })
+      .eq('id', rentScheduleId)
+  }
+
+  const forMonth = schedule?.due_date
+    ? new Date(new Date(schedule.due_date).setDate(1)).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
+
+  if (existing) {
+    if (existing.status !== 'completed') {
+      await supabase
+        .from('payments')
+        .update({
+          status: 'completed',
+          amount,
+          paid_at: new Date().toISOString(),
+          method,
+        })
+        .eq('id', existing.id)
+    }
+    return
+  }
+
+  const { error: insertError } = await supabase.from('payments').insert({
+    lease_id: leaseId,
+    tenant_id: tenantId,
+    amount,
+    type: 'rent',
+    method,
+    status: 'completed',
+    stripe_payment_intent_id: paymentIntentId,
+    for_month: forMonth,
+    paid_at: new Date().toISOString(),
+  })
+
+  if (!insertError) {
+    await maybeSendReceiptEmail(supabase, tenantId, leaseId, amount)
+  } else {
+    console.error('Payment insert error:', insertError)
+  }
+}
+
 export async function POST(request: Request) {
   const payload = await request.text()
   const signature = request.headers.get('stripe-signature')!
@@ -47,74 +159,36 @@ export async function POST(request: Request) {
     case 'payment_intent.succeeded': {
       const pi = event.data.object as Stripe.PaymentIntent
       const metadata = pi.metadata
-      const rentScheduleId = metadata.rent_schedule_id
-      const leaseId = metadata.lease_id
-      const tenantId = metadata.tenant_id
-      const amount = pi.amount / 100
+      await recordSuccessfulPayment({
+        supabase,
+        rentScheduleId: metadata.rent_schedule_id,
+        leaseId: metadata.lease_id,
+        tenantId: metadata.tenant_id,
+        paymentIntentId: pi.id,
+        amount: pi.amount / 100,
+        method: resolveMethod(pi.payment_method_types),
+      })
+      break
+    }
 
-      if (rentScheduleId) {
-        // Update rent schedule
-        const { data: schedule } = await supabase
-          .from('rent_schedule')
-          .select('amount_due, amount_paid, late_fee_applied')
-          .eq('id', rentScheduleId)
-          .single()
-
-        if (schedule) {
-          const newPaid = (schedule.amount_paid || 0) + amount
-          const totalDue = schedule.amount_due + (schedule.late_fee_applied || 0)
-          const status = newPaid >= totalDue ? 'paid' : 'partial'
-
-          await supabase
-            .from('rent_schedule')
-            .update({ amount_paid: newPaid, status })
-            .eq('id', rentScheduleId)
-        }
-
-        // Record payment
-        await supabase.from('payments').insert({
-          lease_id: leaseId,
-          tenant_id: tenantId,
-          amount,
-          type: 'rent',
-          method: pi.payment_method_types?.includes('us_bank_account') ? 'ach' : 'card',
-          status: 'completed',
-          stripe_payment_intent_id: pi.id,
-          for_month: schedule ? undefined : new Date().toISOString().slice(0, 10),
-          paid_at: new Date().toISOString(),
-        })
-
-        // Send receipt email
-        if (tenantId) {
-          const { data: tenant } = await supabase
-            .from('tenants')
-            .select('first_name, last_name, email')
-            .eq('id', tenantId)
-            .single()
-
-          if (tenant?.email) {
-            const { data: lease } = await supabase
-              .from('leases')
-              .select('units(name, properties(name))')
-              .eq('id', leaseId)
-              .single()
-
-            const propertyName = (lease as any)?.units?.properties?.name || 'Your Property'
-            const receipt = paymentReceiptEmail(
-              `${tenant.first_name} ${tenant.last_name}`,
-              amount,
-              new Date().toLocaleDateString(),
-              propertyName
-            )
-
-            try {
-              await sendEmail({ to: tenant.email, ...receipt })
-            } catch (e) {
-              console.error('Failed to send receipt:', e)
-            }
-          }
-        }
+    case 'checkout.session.completed': {
+      const session = event.data.object as Stripe.Checkout.Session
+      if (session.payment_status !== 'paid') {
+        break
       }
+
+      const metadata = session.metadata || {}
+      const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : undefined
+
+      await recordSuccessfulPayment({
+        supabase,
+        rentScheduleId: metadata.rent_schedule_id,
+        leaseId: metadata.lease_id,
+        tenantId: metadata.tenant_id,
+        paymentIntentId,
+        amount: Number(session.amount_total || 0) / 100,
+        method: resolveMethod(session.payment_method_types),
+      })
       break
     }
 
@@ -123,17 +197,32 @@ export async function POST(request: Request) {
       const metadata = pi.metadata
 
       if (metadata.tenant_id && metadata.lease_id) {
+        const { data: existing } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('stripe_payment_intent_id', pi.id)
+          .maybeSingle()
+
+        if (existing) {
+          await supabase
+            .from('payments')
+            .update({ status: 'failed' })
+            .eq('id', existing.id)
+          break
+        }
+
         await supabase.from('payments').insert({
           lease_id: metadata.lease_id,
           tenant_id: metadata.tenant_id,
           amount: pi.amount / 100,
           type: 'rent',
-          method: pi.payment_method_types?.includes('us_bank_account') ? 'ach' : 'card',
+          method: resolveMethod(pi.payment_method_types),
           status: 'failed',
           stripe_payment_intent_id: pi.id,
           for_month: new Date().toISOString().slice(0, 10),
         })
       }
+      console.error('Stripe payment failed:', pi.id, pi.last_payment_error?.message)
       break
     }
 
