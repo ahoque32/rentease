@@ -25,9 +25,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        {children}
-        <Toaster position="top-center" />
+      <body className={`${inter.className} min-h-screen`}>
+        <div className="relative min-h-screen overflow-x-hidden">
+          <div className="pointer-events-none fixed inset-0 -z-10 glass-gradient" />
+          <div className="pointer-events-none fixed -left-24 top-16 -z-10 h-72 w-72 rounded-full bg-blue-200/35 blur-3xl" />
+          <div className="pointer-events-none fixed -right-24 bottom-10 -z-10 h-80 w-80 rounded-full bg-indigo-200/30 blur-3xl" />
+          {children}
+        </div>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   )

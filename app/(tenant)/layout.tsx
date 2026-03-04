@@ -26,7 +26,7 @@ export default async function TenantPortalLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <PortalNav tenantName={tenantName} />
       <main className="mx-auto max-w-5xl p-4 pb-24 md:pb-6">{children}</main>
     </div>

@@ -82,7 +82,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 bg-white">
+      <nav className="border-b border-white/30 bg-white/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <Link href="/" className="flex items-center gap-2">
@@ -95,6 +95,9 @@ export default function LandingPage() {
               <Link href="/login" className="text-gray-600 hover:text-gray-900">
                 Sign In
               </Link>
+              <Link href="/tenant-register" className="text-sm text-blue-600 hover:text-blue-700">
+                Tenant Registration (Testing)
+              </Link>
               <Button asChild>
                 <Link href="/signup">Get Started</Link>
               </Button>
@@ -104,7 +107,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50 to-white">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50/80 to-white/70">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Property management made simple
@@ -137,7 +140,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature) => (
-              <div key={feature.title} className="p-6 rounded-xl bg-gray-50">
+              <div key={feature.title} className="p-6 rounded-xl border border-white/30 bg-white/70 shadow-lg shadow-black/5 backdrop-blur-xl">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <feature.icon className="w-6 h-6 text-blue-600" />
                 </div>
@@ -150,7 +153,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white/40">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple, flat pricing</h2>
@@ -166,7 +169,7 @@ export default function LandingPage() {
                 className={`p-8 rounded-2xl ${
                   plan.popular
                     ? 'bg-blue-600 text-white ring-4 ring-blue-200'
-                    : 'bg-white border border-gray-200'
+                    : 'bg-white/70 border border-white/30 backdrop-blur-xl'
                 }`}
               >
                 <div className="mb-6">
@@ -211,7 +214,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-200">
+      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-white/30 bg-white/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">

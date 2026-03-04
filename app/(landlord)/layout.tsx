@@ -47,12 +47,15 @@ export default async function LandlordLayout({
     .eq('status', 'new')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="hidden md:block">
         <Sidebar newMaintenanceCount={newMaintenanceCount || 0} />
       </div>
 
       <main className="pb-20 md:pb-0 md:pl-64">
+        <div className="sticky top-0 z-30 hidden border-b border-white/30 bg-white/80 px-8 py-3 backdrop-blur-md md:block">
+          <p className="text-sm font-medium text-gray-700">Landlord Portal</p>
+        </div>
         <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
       </main>
 

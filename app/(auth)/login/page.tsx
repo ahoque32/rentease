@@ -47,7 +47,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -84,7 +84,7 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Or sign in with email</span>
+              <span className="bg-white/70 px-2 text-gray-500">Or sign in with email</span>
             </div>
           </div>
 
@@ -129,6 +129,12 @@ export default function LoginPage() {
               Are you a tenant?{' '}
               <Link href="/tenant-login" className="text-blue-600 hover:underline">
                 Log in here
+              </Link>
+            </p>
+            <p>
+              Tenant Registration (Testing):{' '}
+              <Link href="/tenant-register" className="text-blue-600 hover:underline">
+                Register here
               </Link>
             </p>
           </div>
