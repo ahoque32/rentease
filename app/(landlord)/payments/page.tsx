@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, DollarSign } from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/format'
 
 export default async function PaymentsPage() {
   const supabase = createClient()
@@ -55,13 +56,13 @@ export default async function PaymentsPage() {
         <Card>
           <CardContent className="p-6">
             <p className="text-sm text-gray-600">Total Due</p>
-            <p className="text-2xl font-bold">${totalDue.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalDue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
             <p className="text-sm text-gray-600">Total Collected</p>
-            <p className="text-2xl font-bold text-green-600">${totalPaid.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -81,6 +82,9 @@ export default async function PaymentsPage() {
             <div className="text-center py-8">
               <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600">No rent schedule for this month</p>
+              <Button asChild className="mt-4" size="sm" variant="outline">
+                <Link href="/leases/new">Create a Lease</Link>
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -98,7 +102,8 @@ export default async function PaymentsPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${item.amount_due}</p>
+                    <p className="font-medium">{formatCurrency(item.amount_due)}</p>
+                    <p className="text-xs text-gray-500">Due {formatDate(item.due_date)}</p>
                     <span className={`text-sm ${
                       item.status === 'paid' ? 'text-green-600' :
                       item.status === 'overdue' ? 'text-red-600' :

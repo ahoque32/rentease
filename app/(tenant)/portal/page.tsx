@@ -3,7 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { DollarSign, Wrench, FileText, CreditCard } from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/format'
 
 interface PageProps {
   searchParams: { token?: string }
@@ -58,8 +60,8 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
 
   if (!tenant) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
+      <div className="py-12 text-center">
+        <h1 className="mb-2 text-xl font-semibold text-gray-900">Invalid Access</h1>
         <p className="text-gray-600">Please log in or use a valid invite link from your landlord.</p>
       </div>
     )
@@ -105,12 +107,9 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
     return owed > 0
   })
 
-  const tokenQuery = linkToken ? `?token=${linkToken}` : ''
+  const overdueItems = unpaidSchedule.filter((item) => item.status === 'overdue')
 
-  function formatDate(value?: string | null) {
-    if (!value) return 'N/A'
-    return new Date(value).toLocaleDateString()
-  }
+  const tokenQuery = linkToken ? `?token=${linkToken}` : ''
 
   function paymentBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' {
     if (status === 'completed') return 'default'
@@ -127,14 +126,30 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Hello, {tenant.first_name}!</h1>
-        <p className="text-gray-600">{property?.name} - {unit?.name}</p>
+        <p className="text-gray-600">
+          {property?.name || 'Property'}{unit?.name ? ` - ${unit.name}` : ''}
+        </p>
       </div>
+
+      {overdueItems.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold text-red-700">Rent is overdue</p>
+            <p className="text-sm text-red-700">
+              You have {overdueItems.length} overdue payment{overdueItems.length > 1 ? 's' : ''}. Please make a payment as soon as possible.
+            </p>
+            <Button asChild className="mt-3" size="sm" variant="destructive">
+              <Link href={`/portal/pay${tokenQuery}`}>Pay Now</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardContent className="p-6">
             <p className="text-sm text-gray-500">Current Balance Due</p>
-            <p className="text-3xl font-bold text-gray-900">${totalBalanceDue.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalBalanceDue)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -143,7 +158,7 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
             {nextPayment ? (
               <div>
                 <p className="text-xl font-bold text-gray-900">
-                  ${(Number(nextPayment.amount_due || 0) + Number(nextPayment.late_fee_applied || 0) - Number(nextPayment.amount_paid || 0)).toFixed(2)}
+                  {formatCurrency(Number(nextPayment.amount_due || 0) + Number(nextPayment.late_fee_applied || 0) - Number(nextPayment.amount_paid || 0))}
                 </p>
                 <p className="text-sm text-gray-600">Due {formatDate(nextPayment.due_date)}</p>
               </div>
@@ -156,28 +171,28 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
 
       <div className="grid gap-4">
         <Link href={`/portal/pay${tokenQuery}`}>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+                  <DollarSign className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">Pay Rent</h3>
                   <p className="text-sm text-gray-600">Make a payment online</p>
                 </div>
-                <Badge>${currentLease?.monthly_rent}/mo</Badge>
+                <Badge>{formatCurrency(currentLease?.monthly_rent || 0)}/mo</Badge>
               </div>
             </CardContent>
           </Card>
         </Link>
 
         <Link href={`/portal/payments${tokenQuery}`}>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-purple-600" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
+                  <CreditCard className="h-6 w-6 text-purple-600" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">Payment History</h3>
@@ -189,15 +204,15 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
         </Link>
 
         <Link href={`/portal/maintenance${tokenQuery}`}>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Wrench className="w-6 h-6 text-orange-600" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100">
+                  <Wrench className="h-6 w-6 text-orange-600" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">Maintenance Request</h3>
-                  <p className="text-sm text-gray-600">Submit a repair request</p>
+                  <p className="text-sm text-gray-600">Submit or track repair requests</p>
                 </div>
               </div>
             </CardContent>
@@ -205,15 +220,15 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
         </Link>
 
         <Link href={`/portal/lease${tokenQuery}`}>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="transition-shadow hover:shadow-md">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                  <FileText className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">My Lease</h3>
-                  <p className="text-sm text-gray-600">View lease details</p>
+                  <p className="text-sm text-gray-600">View lease terms and signature status</p>
                 </div>
               </div>
             </CardContent>
@@ -236,11 +251,13 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500">Monthly Rent</p>
-            <p className="font-medium">${Number(currentLease?.monthly_rent || 0).toFixed(2)}</p>
+            <p className="font-medium">{formatCurrency(currentLease?.monthly_rent || 0)}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Lease Dates</p>
-            <p className="font-medium">{formatDate(currentLease?.start_date)} - {formatDate(currentLease?.end_date)}</p>
+            <p className="font-medium">
+              {formatDate(currentLease?.start_date)} - {formatDate(currentLease?.end_date)}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -254,20 +271,23 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           {recentPayments.length === 0 ? (
-            <p className="text-sm text-gray-600">No payments yet.</p>
+            <div className="rounded-lg border border-dashed p-6 text-center">
+              <p className="text-sm text-gray-600">No payments yet.</p>
+              <Button asChild className="mt-3" size="sm" variant="outline">
+                <Link href={`/portal/pay${tokenQuery}`}>Make First Payment</Link>
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               {recentPayments.map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                   <div>
-                    <p className="font-medium">${Number(payment.amount || 0).toFixed(2)}</p>
+                    <p className="font-medium">{formatCurrency(payment.amount)}</p>
                     <p className="text-sm text-gray-600">
                       {payment.type} • {payment.method || 'card'} • {formatDate(payment.paid_at || payment.created_at)}
                     </p>
                   </div>
-                  <Badge variant={paymentBadgeVariant(payment.status)}>
-                    {paymentBadgeLabel(payment.status)}
-                  </Badge>
+                  <Badge variant={paymentBadgeVariant(payment.status)}>{paymentBadgeLabel(payment.status)}</Badge>
                 </div>
               ))}
             </div>

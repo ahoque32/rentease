@@ -25,11 +25,15 @@ const navigation = [
   { name: 'Maintenance', href: '/maintenance', icon: Wrench },
 ]
 
-export function MobileNav() {
+interface MobileNavProps {
+  newMaintenanceCount?: number
+}
+
+export function MobileNav({ newMaintenanceCount = 0 }: MobileNavProps) {
   const pathname = usePathname()
 
   return (
-    <div className="bg-white border-t border-gray-200 safe-area-pb">
+    <div className="safe-area-pb border-t border-gray-200 bg-white">
       <nav className="flex items-center justify-around px-2 py-2">
         {navigation.slice(0, 4).map((item) => {
           const isActive = pathname.startsWith(item.href)
@@ -38,41 +42,44 @@ export function MobileNav() {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex flex-col items-center gap-1 px-3 py-2 rounded-lg min-w-[64px]',
+                'flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-3 py-2',
                 isActive ? 'text-blue-600' : 'text-gray-500'
               )}
             >
-              <item.icon className={cn('w-5 h-5', isActive ? 'text-blue-600' : 'text-gray-500')} />
+              <item.icon className={cn('h-5 w-5', isActive ? 'text-blue-600' : 'text-gray-500')} />
               <span className="text-xs font-medium">{item.name}</span>
             </Link>
           )
         })}
 
-        {/* More menu */}
         <Sheet>
           <SheetTrigger asChild>
-            <button className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg min-w-[64px] text-gray-500">
-              <Menu className="w-5 h-5" />
+            <button className="relative flex min-w-[64px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-gray-500">
+              <Menu className="h-5 w-5" />
               <span className="text-xs font-medium">More</span>
+              {newMaintenanceCount > 0 && <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-red-500" />}
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto">
             <div className="grid grid-cols-3 gap-4 p-4">
               {navigation.map((item) => {
                 const isActive = pathname.startsWith(item.href)
+                const showMaintenanceIndicator = item.href === '/maintenance' && newMaintenanceCount > 0
+
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'flex flex-col items-center gap-2 p-4 rounded-xl transition-colors',
+                      'relative flex flex-col items-center gap-2 rounded-xl p-4 transition-colors',
                       isActive
                         ? 'bg-blue-50 text-blue-600'
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                     )}
                   >
-                    <item.icon className="w-6 h-6" />
+                    <item.icon className="h-6 w-6" />
                     <span className="text-sm font-medium">{item.name}</span>
+                    {showMaintenanceIndicator && <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-red-500" />}
                   </Link>
                 )
               })}

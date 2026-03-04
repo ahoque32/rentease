@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { formatCurrency, formatDate } from '@/lib/format'
 
 interface PageProps {
   searchParams: { token?: string }
@@ -17,11 +19,6 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
 function statusLabel(status: string) {
   if (status === 'completed') return 'paid'
   return status
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return 'N/A'
-  return new Date(value).toLocaleDateString()
 }
 
 export default async function TenantPaymentsPage({ searchParams }: PageProps) {
@@ -54,8 +51,8 @@ export default async function TenantPaymentsPage({ searchParams }: PageProps) {
 
   if (!tenant) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
+      <div className="py-12 text-center">
+        <h1 className="mb-2 text-xl font-semibold text-gray-900">Invalid Access</h1>
         <p className="text-gray-600">Please log in or use a valid invite link from your landlord.</p>
       </div>
     )
@@ -91,7 +88,12 @@ export default async function TenantPaymentsPage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           {!payments || payments.length === 0 ? (
-            <p className="text-sm text-gray-600">No payments recorded yet.</p>
+            <div className="rounded-lg border border-dashed p-8 text-center">
+              <p className="text-sm text-gray-600">No payments recorded yet.</p>
+              <Button asChild className="mt-3" size="sm">
+                <Link href={`/portal/pay${tokenQuery}`}>Make a Payment</Link>
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               {payments.map((payment) => {
@@ -103,7 +105,7 @@ export default async function TenantPaymentsPage({ searchParams }: PageProps) {
                   <Link key={payment.id} href={receiptHref} className="block">
                     <div className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50">
                       <div>
-                        <p className="font-medium">${Number(payment.amount || 0).toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrency(payment.amount)}</p>
                         <p className="text-sm text-gray-600">
                           {payment.type} • {payment.method || 'card'} • {formatDate(payment.paid_at || payment.created_at)}
                         </p>

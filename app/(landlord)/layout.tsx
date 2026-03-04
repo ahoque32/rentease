@@ -12,7 +12,9 @@ export default async function LandlordLayout({
   children: React.ReactNode
 }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const role = await getUserRole(supabase)
 
   if (!user) {
@@ -23,7 +25,6 @@ export default async function LandlordLayout({
     redirect('/portal')
   }
 
-  // Check if user has a landlord profile
   const { data: landlord } = await supabase
     .from('landlords')
     .select('*')
@@ -31,7 +32,6 @@ export default async function LandlordLayout({
     .single()
 
   if (!landlord) {
-    // Create landlord profile if it doesn't exist
     const admin = createAdminClient()
     await admin.from('landlords').insert({
       id: user.id,
@@ -40,26 +40,26 @@ export default async function LandlordLayout({
     })
   }
 
+  const { count: newMaintenanceCount } = await supabase
+    .from('maintenance_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('landlord_id', user.id)
+    .eq('status', 'new')
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar />
+        <Sidebar newMaintenanceCount={newMaintenanceCount || 0} />
       </div>
 
-      {/* Main Content */}
-      <main className="md:pl-64 pb-20 md:pb-0">
-        <div className="max-w-7xl mx-auto p-4 md:p-8">
-          {children}
-        </div>
+      <main className="pb-20 md:pb-0 md:pl-64">
+        <div className="mx-auto max-w-7xl p-4 md:p-8">{children}</div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-        <MobileNav />
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+        <MobileNav newMaintenanceCount={newMaintenanceCount || 0} />
       </div>
 
-      {/* AI Chat Widget */}
       <AIChat />
     </div>
   )
