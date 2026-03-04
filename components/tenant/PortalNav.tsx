@@ -49,7 +49,7 @@ export default function PortalNav({ tenantName }: PortalNavProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/30 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/20 bg-white/65 backdrop-blur-2xl shadow-sm shadow-black/5">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Link href={withToken('/portal')} className="flex items-center gap-2">
@@ -69,10 +69,10 @@ export default function PortalNav({ tenantName }: PortalNavProps) {
                   key={item.name}
                   href={withToken(item.href)}
                   className={cn(
-                    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    'rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200',
                     active
-                      ? 'bg-blue-100/80 text-blue-700'
-                      : 'text-gray-700 hover:bg-white/70 hover:text-gray-900'
+                      ? 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-blue-700 ring-1 ring-blue-500/15'
+                      : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
                   )}
                 >
                   {item.name}
@@ -134,7 +134,7 @@ export default function PortalNav({ tenantName }: PortalNavProps) {
         </div>
       </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/30 bg-white/80 px-2 py-2 backdrop-blur-md md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/20 bg-white/65 px-2 py-2 backdrop-blur-2xl shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:hidden">
         <div className="mx-auto grid max-w-5xl grid-cols-5 gap-1">
           {navItems.map((item) => {
             const active = isActive(pathname, item.href)
