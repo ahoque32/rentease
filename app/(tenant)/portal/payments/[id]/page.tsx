@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { formatCurrency, formatDate } from '@/lib/format'
 
 interface PageProps {
   params: { id: string }
@@ -18,11 +19,6 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
 function statusLabel(status: string) {
   if (status === 'completed') return 'paid'
   return status
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return 'N/A'
-  return new Date(value).toLocaleString()
 }
 
 export default async function TenantReceiptPage({ params, searchParams }: PageProps) {
@@ -55,8 +51,8 @@ export default async function TenantReceiptPage({ params, searchParams }: PagePr
 
   if (!tenant) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
+      <div className="py-12 text-center">
+        <h1 className="mb-2 text-xl font-semibold text-gray-900">Invalid Access</h1>
         <p className="text-gray-600">Please log in or use a valid invite link from your landlord.</p>
       </div>
     )
@@ -80,8 +76,8 @@ export default async function TenantReceiptPage({ params, searchParams }: PagePr
 
   if (!payment) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Receipt Not Found</h1>
+      <div className="py-12 text-center">
+        <h1 className="mb-2 text-xl font-semibold text-gray-900">Receipt Not Found</h1>
         <p className="text-gray-600">The requested payment receipt does not exist.</p>
       </div>
     )
@@ -100,12 +96,12 @@ export default async function TenantReceiptPage({ params, searchParams }: PagePr
         <p className="text-sm text-gray-500">Use your browser print dialog to print this receipt.</p>
       </div>
 
-      <Card className="print:shadow-none print:border-0">
+      <Card className="print:border-0 print:shadow-none">
         <CardHeader className="border-b print:border-b">
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="text-2xl">Payment Receipt</CardTitle>
-              <p className="text-sm text-gray-600 mt-1">Receipt ID: {payment.id}</p>
+              <p className="mt-1 text-sm text-gray-600">Receipt ID: {payment.id}</p>
             </div>
             <Badge variant={statusBadgeVariant(payment.status)}>{statusLabel(payment.status)}</Badge>
           </div>
@@ -118,11 +114,11 @@ export default async function TenantReceiptPage({ params, searchParams }: PagePr
             </div>
             <div>
               <p className="text-sm text-gray-500">Date</p>
-              <p className="font-medium">{formatDate(payment.paid_at || payment.created_at)}</p>
+              <p className="font-medium">{formatDate(payment.paid_at || payment.created_at, { includeTime: true })}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Amount</p>
-              <p className="font-medium">${Number(payment.amount || 0).toFixed(2)}</p>
+              <p className="font-medium">{formatCurrency(payment.amount)}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Payment Method</p>
@@ -138,9 +134,7 @@ export default async function TenantReceiptPage({ params, searchParams }: PagePr
             <p className="text-sm text-gray-500">Property</p>
             <p className="font-medium">{property?.name || 'N/A'}</p>
             <p className="text-sm text-gray-600">{unit?.name || 'Unit N/A'}</p>
-            {property?.address_line1 && (
-              <p className="text-sm text-gray-600">{property.address_line1}</p>
-            )}
+            {property?.address_line1 && <p className="text-sm text-gray-600">{property.address_line1}</p>}
           </div>
         </CardContent>
       </Card>

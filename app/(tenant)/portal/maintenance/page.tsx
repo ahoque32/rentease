@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Wrench } from 'lucide-react'
+import { formatDate } from '@/lib/format'
 
 interface PageProps {
   searchParams: { token?: string }
@@ -14,11 +16,6 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
   if (status === 'in_progress' || status === 'scheduled') return 'secondary'
   if (status === 'cancelled') return 'outline'
   return 'destructive'
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return 'N/A'
-  return new Date(value).toLocaleDateString()
 }
 
 export default async function TenantMaintenancePage({ searchParams }: PageProps) {
@@ -51,8 +48,8 @@ export default async function TenantMaintenancePage({ searchParams }: PageProps)
 
   if (!tenant) {
     return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
+      <div className="py-12 text-center">
+        <h1 className="mb-2 text-xl font-semibold text-gray-900">Invalid Access</h1>
         <p className="text-gray-600">Please log in or use a valid invite link from your landlord.</p>
       </div>
     )
@@ -85,7 +82,13 @@ export default async function TenantMaintenancePage({ searchParams }: PageProps)
         </CardHeader>
         <CardContent>
           {!requests || requests.length === 0 ? (
-            <p className="text-sm text-gray-600">No requests yet.</p>
+            <div className="rounded-lg border border-dashed p-8 text-center">
+              <Wrench className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+              <p className="text-sm text-gray-600">No maintenance requests yet.</p>
+              <Button asChild className="mt-3" size="sm">
+                <Link href={`/portal/maintenance/new${tokenQuery}`}>Submit a Request</Link>
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               {requests.map((request) => {
@@ -103,9 +106,7 @@ export default async function TenantMaintenancePage({ searchParams }: PageProps)
                             {request.category || 'other'} {request.severity ? `• ${request.severity}` : ''} • {formatDate(request.created_at)}
                           </p>
                         </div>
-                        <Badge variant={statusBadgeVariant(request.status)}>
-                          {request.status.replace('_', ' ')}
-                        </Badge>
+                        <Badge variant={statusBadgeVariant(request.status)}>{request.status.replace('_', ' ')}</Badge>
                       </div>
                     </div>
                   </Link>

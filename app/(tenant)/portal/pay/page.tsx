@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PaymentForm } from '@/components/portal/PaymentForm'
 import { Button } from '@/components/ui/button'
+import { formatCurrency, formatDate } from '@/lib/format'
 
 interface PageProps {
   searchParams: { token?: string; schedule?: string; status?: string }
@@ -115,7 +116,7 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
       {(!unpaidSchedule || unpaidSchedule.length === 0) ? (
         <Card>
           <CardContent className="p-6 text-center">
-            <p className="text-gray-600">No payments due at this time. You&apos;re all caught up! 🎉</p>
+            <p className="text-gray-600">No payments due at this time. You&apos;re all caught up.</p>
           </CardContent>
         </Card>
       ) : (
@@ -140,15 +141,15 @@ export default async function TenantPayPage({ searchParams }: PageProps) {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sm text-gray-500">
-                        Due: {new Date(schedule.due_date).toLocaleDateString()}
+                        Due: {formatDate(schedule.due_date)}
                       </p>
                       {schedule.late_fee_applied > 0 && (
                         <p className="text-sm text-red-600">
-                          Late fee: ${schedule.late_fee_applied.toFixed(2)}
+                          Late fee: {formatCurrency(schedule.late_fee_applied)}
                         </p>
                       )}
                     </div>
-                    <p className="text-2xl font-bold">${amountOwed.toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(amountOwed)}</p>
                   </div>
 
                   {amountOwed > 0 && (

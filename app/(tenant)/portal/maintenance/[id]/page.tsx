@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import TenantCommentThread from './tenant-comment-thread'
+import { formatDate } from '@/lib/format'
 
 interface PageProps {
   params: { id: string }
@@ -16,11 +17,6 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
   if (status === 'in_progress' || status === 'scheduled') return 'secondary'
   if (status === 'cancelled') return 'outline'
   return 'destructive'
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return 'N/A'
-  return new Date(value).toLocaleDateString()
 }
 
 export default async function TenantMaintenanceDetailPage({ params, searchParams }: PageProps) {

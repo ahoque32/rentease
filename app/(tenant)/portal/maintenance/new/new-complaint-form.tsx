@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from 'sonner'
 
 interface NewComplaintFormProps {
   token?: string
@@ -33,6 +34,7 @@ export default function NewComplaintForm({ token }: NewComplaintFormProps) {
 
     if (!title || !description) {
       setError('Title and description are required.')
+      toast.error('Title and description are required.')
       setLoading(false)
       return
     }
@@ -46,7 +48,9 @@ export default function NewComplaintForm({ token }: NewComplaintFormProps) {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Failed to create request')
+        const message = data.error || 'Failed to create request'
+        setError(message)
+        toast.error(message)
         setLoading(false)
         return
       }
@@ -54,10 +58,13 @@ export default function NewComplaintForm({ token }: NewComplaintFormProps) {
       const nextHref = token
         ? `/portal/maintenance/${data.id}?token=${encodeURIComponent(token)}`
         : `/portal/maintenance/${data.id}`
+      toast.success('Maintenance request submitted.')
       router.push(nextHref)
       router.refresh()
     } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+      const message = err.message || 'Something went wrong'
+      setError(message)
+      toast.error(message)
       setLoading(false)
     }
   }
