@@ -10,7 +10,18 @@ ALTER TABLE maintenance_requests
 
 ALTER TABLE maintenance_requests
   ADD CONSTRAINT maintenance_requests_category_check
-  CHECK (category IN ('maintenance', 'noise', 'billing', 'other'));
+  CHECK (category IN (
+    'plumbing',
+    'electrical',
+    'hvac',
+    'appliance',
+    'structural',
+    'pest',
+    'maintenance',
+    'noise',
+    'billing',
+    'other'
+  ));
 
 -- Comment threads on maintenance requests
 CREATE TABLE IF NOT EXISTS complaint_comments (
