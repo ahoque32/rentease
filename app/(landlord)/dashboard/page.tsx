@@ -1,230 +1,294 @@
 import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
-import { 
-  Building2, 
-  Users, 
-  DollarSign, 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Building2,
+  CalendarClock,
+  FileText,
+  Home,
+  Plus,
+  Receipt,
+  Users,
   Wrench,
-  TrendingUp,
-  AlertCircle,
-  ArrowRight
 } from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/format'
+
+function requestStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (status === 'completed') return 'default'
+  if (status === 'new') return 'destructive'
+  if (status === 'cancelled') return 'outline'
+  return 'secondary'
+}
 
 export default async function DashboardPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  // Fetch dashboard data
   const { data: properties } = await supabase
     .from('properties')
     .select('id')
     .eq('landlord_id', user!.id)
     .eq('archived', false)
 
-  const { data: tenants } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('landlord_id', user!.id)
-    .eq('status', 'active')
+  const propertyIds = properties?.map((property) => property.id) || []
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const sevenDaysFromNow = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-  const { data: units } = await supabase
-    .from('units')
-    .select('id, status, property_id')
-    .in('property_id', properties?.map(p => p.id) || [])
+  const [unitsResult, leasesResult, maintenanceResult, upcomingDueResult, recentPaymentsResult] = await Promise.all([
+    propertyIds.length
+      ? supabase.from('units').select('id, status, property_id').in('property_id', propertyIds)
+      : Promise.resolve({ data: [] as any[] }),
+    supabase
+      .from('leases')
+      .select('id')
+      .eq('landlord_id', user!.id)
+      .eq('status', 'active'),
+    supabase
+      .from('maintenance_requests')
+      .select('id, title, status, created_at, units(name, properties(name))')
+      .eq('landlord_id', user!.id)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('rent_schedule')
+      .select(`
+        id, due_date, amount_due, amount_paid, late_fee_applied, status,
+        leases!inner(landlord_id, units(name, properties(name)), lease_tenants(tenants(first_name, last_name)))
+      `)
+      .eq('leases.landlord_id', user!.id)
+      .gte('due_date', startOfToday.toISOString())
+      .lte('due_date', sevenDaysFromNow.toISOString())
+      .in('status', ['upcoming', 'due', 'partial', 'overdue'])
+      .order('due_date', { ascending: true }),
+    supabase
+      .from('payments')
+      .select(`
+        id, amount, method, status, paid_at, created_at,
+        leases!inner(landlord_id, units(name, properties(name)), lease_tenants(tenants(first_name, last_name)))
+      `)
+      .eq('leases.landlord_id', user!.id)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
 
-  const { data: maintenanceRequests } = await supabase
-    .from('maintenance_requests')
-    .select('id, status, urgency')
-    .eq('landlord_id', user!.id)
-    .in('status', ['new', 'in_progress', 'scheduled'])
+  const units = unitsResult.data || []
+  const activeLeases = leasesResult.data || []
+  const maintenanceRequests = maintenanceResult.data || []
+  const upcomingDue = upcomingDueResult.data || []
+  const recentPayments = recentPaymentsResult.data || []
 
-  const { data: rentSchedule } = await supabase
-    .from('rent_schedule')
-    .select('amount_due, amount_paid, status, leases!inner(landlord_id)')
-    .eq('leases.landlord_id', user!.id)
-    .gte('due_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-    .lt('due_date', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString())
+  const totalUnits = units.length
+  const occupiedUnits = units.filter((unit) => unit.status === 'occupied').length
+  const vacantUnits = totalUnits - occupiedUnits
 
-  const totalUnits = units?.length || 0
-  const occupiedUnits = units?.filter(u => u.status === 'occupied').length || 0
-  const occupancyRate = totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0
-
-  const totalRentDue = rentSchedule?.reduce((sum, r) => sum + (r.amount_due || 0), 0) || 0
-  const totalRentPaid = rentSchedule?.reduce((sum, r) => sum + (r.amount_paid || 0), 0) || 0
-  const collectionRate = totalRentDue > 0 ? Math.round((totalRentPaid / totalRentDue) * 100) : 0
-
-  const overduePayments = rentSchedule?.filter(r => r.status === 'overdue').length || 0
-  const urgentMaintenance = maintenanceRequests?.filter(r => r.urgency === 'high' || r.urgency === 'emergency').length || 0
-
-  const stats = [
-    { 
-      name: 'Properties', 
-      value: properties?.length || 0, 
+  const summaryCards = [
+    {
+      title: 'Total Properties',
+      value: properties?.length || 0,
       icon: Building2,
-      href: '/properties'
+      href: '/properties',
     },
-    { 
-      name: 'Active Tenants', 
-      value: tenants?.length || 0, 
+    {
+      title: 'Total Units',
+      value: totalUnits,
+      icon: Home,
+      href: '/properties',
+    },
+    {
+      title: 'Occupied vs Vacant',
+      value: `${occupiedUnits} / ${vacantUnits}`,
       icon: Users,
-      href: '/tenants'
+      href: '/properties',
     },
-    { 
-      name: 'Occupancy Rate', 
-      value: `${occupancyRate}%`, 
-      icon: TrendingUp,
-      href: '/properties'
+    {
+      title: 'Active Leases',
+      value: activeLeases.length,
+      icon: FileText,
+      href: '/leases',
     },
-    { 
-      name: 'Collection Rate', 
-      value: `${collectionRate}%`, 
-      icon: DollarSign,
-      href: '/payments'
-    },
-  ]
-
-  const actionItems = [
-    ...(overduePayments > 0 ? [{
-      type: 'warning' as const,
-      title: `${overduePayments} Overdue Payment${overduePayments > 1 ? 's' : ''}`,
-      description: 'Rent payments are past due',
-      href: '/payments',
-    }] : []),
-    ...(urgentMaintenance > 0 ? [{
-      type: 'danger' as const,
-      title: `${urgentMaintenance} Urgent Maintenance Request${urgentMaintenance > 1 ? 's' : ''}`,
-      description: 'Requires immediate attention',
-      href: '/maintenance',
-    }] : []),
-    ...(maintenanceRequests?.filter(r => r.status === 'new').length || 0 > 0 ? [{
-      type: 'info' as const,
-      title: `${maintenanceRequests?.filter(r => r.status === 'new').length} New Maintenance Request${(maintenanceRequests?.filter(r => r.status === 'new').length || 0) > 1 ? 's' : ''}`,
-      description: 'Awaiting review',
-      href: '/maintenance',
-    }] : []),
   ]
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here&apos;s what&apos;s happening with your properties.</p>
+          <p className="text-gray-600">Portfolio snapshot and latest activity.</p>
         </div>
-        <div className="hidden md:flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/payments/record">Record Payment</Link>
-          </Button>
+        <div className="hidden gap-2 md:flex">
           <Button asChild>
-            <Link href="/properties/new">Add Property</Link>
+            <Link href="/properties/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Property
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/tenants/new">Add Tenant</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/leases/new">New Lease</Link>
           </Button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Link key={stat.name} href={stat.href}>
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <stat.icon className="w-8 h-8 text-blue-600" />
-                  <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {summaryCards.map((card) => (
+          <Link key={card.title} href={card.href}>
+            <Card className="h-full transition-shadow hover:shadow-md">
+              <CardContent className="p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <card.icon className="h-5 w-5 text-blue-600" />
+                  <p className="text-xl font-bold text-gray-900">{card.value}</p>
                 </div>
-                <p className="mt-2 text-sm text-gray-600">{stat.name}</p>
+                <p className="text-sm text-gray-600">{card.title}</p>
               </CardContent>
             </Card>
           </Link>
         ))}
       </div>
 
-      {/* Rent Status */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Recent Maintenance Requests
+            </CardTitle>
+            <Button variant="link" asChild className="px-0">
+              <Link href="/maintenance">View all</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {maintenanceRequests.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-6 text-center">
+                <p className="text-sm text-gray-600">No maintenance requests yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {maintenanceRequests.map((request) => (
+                  <Link key={request.id} href={`/maintenance/${request.id}`} className="block rounded-lg border p-3 hover:bg-gray-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-gray-900">{request.title}</p>
+                        <p className="text-xs text-gray-500">
+                          {(request as any).units?.properties?.name || 'Property'} - {(request as any).units?.name || 'Unit'}
+                        </p>
+                        <p className="text-xs text-gray-500">{formatDate(request.created_at)}</p>
+                      </div>
+                      <Badge variant={requestStatusVariant(request.status)}>{request.status.replace('_', ' ')}</Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5" />
+              Upcoming Rent Due (7 days)
+            </CardTitle>
+            <Button variant="link" asChild className="px-0">
+              <Link href="/payments">View payments</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {upcomingDue.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-6 text-center">
+                <p className="text-sm text-gray-600">No upcoming rent due in the next 7 days.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingDue.map((item) => {
+                  const tenant = (item as any).leases?.lease_tenants?.[0]?.tenants
+                  const balance = Number(item.amount_due || 0) + Number(item.late_fee_applied || 0) - Number(item.amount_paid || 0)
+
+                  return (
+                    <div key={item.id} className="rounded-lg border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {(item as any).leases?.units?.properties?.name || 'Property'} - {(item as any).leases?.units?.name || 'Unit'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {tenant ? `${tenant.first_name} ${tenant.last_name}` : 'Tenant'} - due {formatDate(item.due_date)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">{formatCurrency(Math.max(balance, 0))}</p>
+                          <p className="text-xs text-gray-500">{item.status}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            This Month&apos;s Rent
+            <Receipt className="h-5 w-5" />
+            Recent Payments Received
           </CardTitle>
+          <Button variant="link" asChild className="px-0">
+            <Link href="/payments">View all</Link>
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Collection Progress</span>
-              <span className="font-medium">${totalRentPaid.toLocaleString()} / ${totalRentDue.toLocaleString()}</span>
+          {recentPayments.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-center">
+              <p className="text-sm text-gray-600">No payments received yet.</p>
             </div>
-            <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-green-500 transition-all"
-                style={{ width: `${collectionRate}%` }}
-              />
+          ) : (
+            <div className="space-y-3">
+              {recentPayments.map((payment) => {
+                const tenant = (payment as any).leases?.lease_tenants?.[0]?.tenants
+
+                return (
+                  <div key={payment.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {tenant ? `${tenant.first_name} ${tenant.last_name}` : 'Tenant'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(payment as any).leases?.units?.properties?.name || 'Property'} - {(payment as any).leases?.units?.name || 'Unit'}
+                      </p>
+                      <p className="text-xs text-gray-500">{formatDate(payment.paid_at || payment.created_at)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
+                      <p className="text-xs text-gray-500">{payment.method || 'card'}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">{occupiedUnits} of {totalUnits} units occupied</span>
-              <span className="font-medium text-green-600">{collectionRate}% collected</span>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Action Items */}
-      {actionItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              Action Items
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {actionItems.map((item, index) => (
-                <Link
-                  key={index}
-                  href={item.href}
-                  className="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Badge 
-                      variant={
-                        item.type === 'danger' ? 'destructive' : 
-                        item.type === 'warning' ? 'default' : 
-                        'secondary'
-                      }
-                    >
-                      {item.type === 'danger' ? 'Urgent' : item.type === 'warning' ? 'Action Needed' : 'Info'}
-                    </Badge>
-                    <div>
-                      <p className="font-medium text-gray-900">{item.title}</p>
-                      <p className="text-sm text-gray-600">{item.description}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400" />
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Add Property', href: '/properties/new', icon: Building2 },
-          { label: 'Add Tenant', href: '/tenants/new', icon: Users },
-          { label: 'Record Payment', href: '/payments/record', icon: DollarSign },
-          { label: 'New Request', href: '/maintenance/new', icon: Wrench },
-        ].map((action) => (
-          <Link key={action.label} href={action.href}>
-            <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
-              <action.icon className="w-5 h-5" />
-              <span>{action.label}</span>
-            </Button>
-          </Link>
-        ))}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Button asChild>
+          <Link href="/properties/new">Add Property</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/tenants/new">Add Tenant</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/leases/new">New Lease</Link>
+        </Button>
       </div>
     </div>
   )
