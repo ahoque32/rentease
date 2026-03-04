@@ -1,17 +1,20 @@
 'use client'
 
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function TenantSignupPage() {
+interface TenantSignupPageProps {
+  searchParams: { token?: string }
+}
+
+export default function TenantSignupPage({ searchParams }: TenantSignupPageProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = useMemo(() => searchParams.get('token') || '', [searchParams])
+  const token = searchParams.token || ''
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
