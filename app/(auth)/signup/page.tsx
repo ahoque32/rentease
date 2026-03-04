@@ -20,6 +20,7 @@ export default function SignupPage() {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
         data: {
           full_name: fullName,
+          role: 'owner',
         },
       },
     })

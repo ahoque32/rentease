@@ -10,36 +10,51 @@ interface PageProps {
 export default async function TenantPayPage({ searchParams }: PageProps) {
   const supabase = createClient()
   const token = searchParams.token
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!token) {
-    return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
-        <p className="text-gray-600">Please use the link provided by your landlord.</p>
-      </div>
-    )
+  let tenant: any = null
+
+  if (user) {
+    const { data: tenantByAuth } = await supabase
+      .from('tenants')
+      .select(`
+        id, first_name, last_name,
+        lease_tenants(
+          leases(
+            id, monthly_rent, landlord_id,
+            units(name, properties(name))
+          )
+        )
+      `)
+      .eq('auth_user_id', user.id)
+      .single()
+    tenant = tenantByAuth
   }
 
-  // Get tenant from token
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select(`
-      id, first_name, last_name,
-      lease_tenants(
-        leases(
-          id, monthly_rent, landlord_id,
-          units(name, properties(name))
+  if (!tenant && token) {
+    const { data: tenantByToken } = await supabase
+      .from('tenants')
+      .select(`
+        id, first_name, last_name,
+        lease_tenants(
+          leases(
+            id, monthly_rent, landlord_id,
+            units(name, properties(name))
+          )
         )
-      )
-    `)
-    .eq('portal_token', token)
-    .single()
+      `)
+      .eq('portal_token', token)
+      .single()
+    tenant = tenantByToken
+  }
 
   if (!tenant) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h1>
-        <p className="text-gray-600">This link is no longer valid.</p>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
+        <p className="text-gray-600">Please log in or use a valid invite link from your landlord.</p>
       </div>
     )
   }

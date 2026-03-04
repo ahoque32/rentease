@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { MobileNav } from '@/components/shared/MobileNav'
 import { AIChat } from '@/components/dashboard/AIChat'
+import { getUserRole } from '@/lib/auth/utils'
 
 export default async function LandlordLayout({
   children,
@@ -12,9 +13,14 @@ export default async function LandlordLayout({
 }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const role = await getUserRole(supabase)
 
   if (!user) {
     redirect('/login')
+  }
+
+  if (role !== 'owner') {
+    redirect('/portal')
   }
 
   // Check if user has a landlord profile

@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Wrench, FileText } from 'lucide-react'
 
@@ -12,39 +10,55 @@ interface PageProps {
 
 export default async function TenantPortalPage({ searchParams }: PageProps) {
   const supabase = createClient()
-  
-  // Get token from URL
+
   const token = searchParams.token
-  
-  if (!token) {
-    return (
-      <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
-        <p className="text-gray-600">Please use the link provided by your landlord.</p>
-      </div>
-    )
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let tenant: any = null
+  let linkToken: string | null = null
+
+  if (user) {
+    const { data: tenantByAuth } = await supabase
+      .from('tenants')
+      .select(`
+        *,
+        lease_tenants(
+          leases(
+            *,
+            units(name, properties(name, address_line1))
+          )
+        )
+      `)
+      .eq('auth_user_id', user.id)
+      .single()
+    tenant = tenantByAuth
   }
 
-  // Verify token and get tenant data
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select(`
-      *,
-      lease_tenants(
-        leases(
-          *,
-          units(name, properties(name, address_line1))
+  if (!tenant && token) {
+    const { data: tenantByToken } = await supabase
+      .from('tenants')
+      .select(`
+        *,
+        lease_tenants(
+          leases(
+            *,
+            units(name, properties(name, address_line1))
+          )
         )
-      )
-    `)
-    .eq('portal_token', token)
-    .single()
+      `)
+      .eq('portal_token', token)
+      .single()
+    tenant = tenantByToken
+    linkToken = token
+  }
 
   if (!tenant) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h1>
-        <p className="text-gray-600">This link is no longer valid. Please contact your landlord.</p>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Access</h1>
+        <p className="text-gray-600">Please log in or use a valid invite link from your landlord.</p>
       </div>
     )
   }
@@ -61,7 +75,7 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
       </div>
 
       <div className="grid gap-4">
-        <Link href={`/portal/pay?token=${token}`}>
+        <Link href={linkToken ? `/portal/pay?token=${linkToken}` : '/portal/pay'}>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -78,7 +92,7 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
           </Card>
         </Link>
 
-        <Link href={`/portal/maintenance?token=${token}`}>
+        <Link href={linkToken ? `/portal/maintenance?token=${linkToken}` : '/portal/maintenance'}>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -94,7 +108,7 @@ export default async function TenantPortalPage({ searchParams }: PageProps) {
           </Card>
         </Link>
 
-        <Link href={`/portal/lease?token=${token}`}>
+        <Link href={linkToken ? `/portal/lease?token=${linkToken}` : '/portal/lease'}>
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">

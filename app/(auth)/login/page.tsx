@@ -118,12 +118,20 @@ export default function LoginPage() {
         </CardContent>
 
         <CardFooter className="justify-center">
-          <p className="text-sm text-gray-600">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-blue-600 hover:underline">
-              Sign up
-            </Link>
-          </p>
+          <div className="text-sm text-gray-600 text-center space-y-2">
+            <p>
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="text-blue-600 hover:underline">
+                Sign up
+              </Link>
+            </p>
+            <p>
+              Are you a tenant?{' '}
+              <Link href="/tenant-login" className="text-blue-600 hover:underline">
+                Log in here
+              </Link>
+            </p>
+          </div>
         </CardFooter>
       </Card>
     </div>
