@@ -9,11 +9,11 @@ import {
   Home,
   Wrench,
   Users,
-  Calendar,
   DollarSign,
   Edit,
 } from 'lucide-react'
 import DeleteMaintenanceButton from './delete-button'
+import OwnerCommentThread from './owner-comment-thread'
 
 interface PageProps {
   params: { id: string }
@@ -37,6 +37,12 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
   if (!request) {
     redirect('/maintenance')
   }
+
+  const { data: comments } = await supabase
+    .from('complaint_comments')
+    .select('id, author_type, body, created_at')
+    .eq('request_id', params.id)
+    .order('created_at', { ascending: true })
 
   const unit = (request as any).units
   const property = unit?.properties
@@ -251,6 +257,15 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Comment Thread</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OwnerCommentThread requestId={params.id} initialComments={(comments || []) as any} />
+        </CardContent>
+      </Card>
     </div>
   )
 }
