@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Plus, Wrench } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 
@@ -23,21 +24,6 @@ export default async function MaintenancePage() {
     .order('created_at', { ascending: false })
 
   const newRequestsCount = requests?.filter((request) => request.status === 'new').length || 0
-
-  const statusColors: Record<string, string> = {
-    new: 'bg-blue-100 text-blue-800',
-    in_progress: 'bg-yellow-100 text-yellow-800',
-    scheduled: 'bg-purple-100 text-purple-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-gray-100 text-gray-800',
-  }
-
-  const urgencyColors: Record<string, string> = {
-    low: 'bg-gray-100 text-gray-800',
-    medium: 'bg-blue-100 text-blue-800',
-    high: 'bg-orange-100 text-orange-800',
-    emergency: 'bg-red-100 text-red-800',
-  }
 
   return (
     <div className="space-y-6">
@@ -90,12 +76,8 @@ export default async function MaintenancePage() {
                       <p className="text-xs text-gray-500">Created {formatDate(request.created_at)}</p>
                     </div>
                     <div className="flex gap-2">
-                      <span className={`rounded-full px-3 py-1 text-sm font-medium ${urgencyColors[request.urgency || 'medium']}`}>
-                        {request.urgency}
-                      </span>
-                      <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusColors[request.status || 'new']}`}>
-                        {request.status}
-                      </span>
+                      <StatusBadge kind="urgency" value={request.urgency} />
+                      <StatusBadge kind="maintenance" value={request.status} />
                     </div>
                   </div>
                 </CardContent>

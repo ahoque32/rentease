@@ -8,18 +8,25 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SubmitButton } from '@/components/ui/submit-button'
+import { FormError } from '@/components/shared/FormError'
+import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft } from 'lucide-react'
 import { syncTenantToGHL } from '@/lib/ghl/contacts'
 
-export default function NewTenantPage() {
+interface NewTenantPageProps {
+  searchParams?: { error?: string }
+}
+
+export default function NewTenantPage({ searchParams }: NewTenantPageProps) {
   async function createTenant(formData: FormData) {
     'use server'
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/login')
 
     const tenantData = {
-      landlord_id: user!.id,
+      landlord_id: user.id,
       first_name: formData.get('first_name') as string,
       last_name: formData.get('last_name') as string,
       email: formData.get('email') as string,
@@ -39,7 +46,8 @@ export default function NewTenantPage() {
       .single()
 
     if (error) {
-      redirect('/tenants/new?error=' + encodeURIComponent(error.message))
+      console.error('Tenant insert failed:', error)
+      redirect('/tenants/new?error=' + encodeURIComponent('Could not create the tenant. Please check the form and try again.'))
     }
 
     // Sync to GHL
@@ -70,6 +78,7 @@ export default function NewTenantPage() {
         </CardHeader>
         <CardContent>
           <form action={createTenant} className="space-y-6">
+            <FormError message={searchParams?.error} />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_name">First Name</Label>
@@ -153,11 +162,10 @@ export default function NewTenantPage() {
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
-              <textarea
+              <Textarea
                 id="notes"
                 name="notes"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Any additional notes about this tenant..."
               />
             </div>

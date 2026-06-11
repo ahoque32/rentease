@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   ArrowLeft,
@@ -13,8 +13,7 @@ import {
   Users,
   FileText,
   Edit,
-  Upload,
-  CheckCircle
+  Upload
 } from 'lucide-react'
 import DeleteLeaseButton from './delete-lease-button'
 import SignaturePanel from './signature-panel'
@@ -81,14 +80,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">Lease Agreement</h1>
           <div className="flex items-center gap-2">
-            <Badge variant={
-              lease.status === 'active' ? 'default' :
-              lease.status === 'expiring' ? 'secondary' :
-              lease.status === 'pending_signatures' ? 'outline' :
-              'outline'
-            }>
-              {lease.status === 'pending_signatures' ? 'Pending Signatures' : lease.status}
-            </Badge>
+            <StatusBadge kind="lease" value={lease.status} />
           </div>
         </div>
         <div className="flex gap-2">
@@ -290,15 +282,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
                     <td className="text-right py-3 px-4">${payment.amount_due.toLocaleString()}</td>
                     <td className="text-right py-3 px-4">${(payment.amount_paid || 0).toLocaleString()}</td>
                     <td className="text-center py-3 px-4">
-                      <Badge variant={
-                        payment.status === 'paid' ? 'default' :
-                        payment.status === 'partial' ? 'secondary' :
-                        payment.status === 'overdue' ? 'destructive' :
-                        'outline'
-                      }>
-                        {payment.status === 'paid' && <CheckCircle className="w-3 h-3 inline mr-1" />}
-                        {payment.status}
-                      </Badge>
+                      <StatusBadge kind="rent" value={payment.status} />
                     </td>
                   </tr>
                 ))}

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { internalError } from '@/lib/api/respond'
 
 export async function PUT(
   request: Request,
@@ -50,7 +51,7 @@ export async function PUT(
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Update insurance policy error', error)
   }
 
   return NextResponse.json({ id: policy.id })
@@ -84,7 +85,7 @@ export async function DELETE(
   const { error } = await admin.from('insurance_policies').delete().eq('id', params.id)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Delete insurance policy error', error)
   }
 
   return NextResponse.json({ success: true })

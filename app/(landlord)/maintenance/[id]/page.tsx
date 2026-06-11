@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import {
   ArrowLeft,
   Home,
@@ -48,21 +49,6 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
   const property = unit?.properties
   const tenant = (request as any).tenants
 
-  const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    new: 'default',
-    in_progress: 'secondary',
-    scheduled: 'secondary',
-    completed: 'default',
-    cancelled: 'outline',
-  }
-
-  const urgencyColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    low: 'outline',
-    medium: 'secondary',
-    high: 'default',
-    emergency: 'destructive',
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -76,12 +62,8 @@ export default async function MaintenanceDetailPage({ params }: PageProps) {
           </Button>
           <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
           <div className="flex items-center gap-2">
-            <Badge variant={statusColors[request.status] || 'outline'}>
-              {request.status?.replace('_', ' ')}
-            </Badge>
-            <Badge variant={urgencyColors[request.urgency] || 'outline'}>
-              {request.urgency} urgency
-            </Badge>
+            <StatusBadge kind="maintenance" value={request.status} />
+            <StatusBadge kind="urgency" value={request.urgency} />
             <Badge variant="outline">{request.category}</Badge>
           </div>
         </div>

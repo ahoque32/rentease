@@ -2,23 +2,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatCurrency, formatDate } from '@/lib/format'
 
 interface PageProps {
   params: { id: string }
   searchParams: { token?: string }
-}
-
-function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' {
-  if (status === 'completed') return 'default'
-  if (status === 'pending') return 'secondary'
-  return 'destructive'
-}
-
-function statusLabel(status: string) {
-  if (status === 'completed') return 'paid'
-  return status
 }
 
 export default async function TenantReceiptPage({ params, searchParams }: PageProps) {
@@ -103,7 +92,7 @@ export default async function TenantReceiptPage({ params, searchParams }: PagePr
               <CardTitle className="text-2xl">Payment Receipt</CardTitle>
               <p className="mt-1 text-sm text-gray-600">Receipt ID: {payment.id}</p>
             </div>
-            <Badge variant={statusBadgeVariant(payment.status)}>{statusLabel(payment.status)}</Badge>
+            <StatusBadge kind="payment" value={payment.status} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">

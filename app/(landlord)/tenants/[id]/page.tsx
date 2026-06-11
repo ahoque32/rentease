@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InviteTenantButton } from './InviteTenantButton'
 import { 
@@ -232,13 +233,7 @@ export default async function TenantDetailPage({ params }: PageProps) {
                         </p>
                       </div>
                       <div className="text-right">
-                        <Badge variant={
-                          payment.status === 'completed' ? 'default' :
-                          payment.status === 'pending' ? 'secondary' :
-                          'destructive'
-                        }>
-                          {payment.status}
-                        </Badge>
+                        <StatusBadge kind="payment" value={payment.status} />
                         <p className="text-sm text-gray-500 mt-1">
                           {new Date(payment.created_at).toLocaleDateString()}
                         </p>
@@ -273,13 +268,7 @@ export default async function TenantDetailPage({ params }: PageProps) {
                       >
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{request.title}</p>
-                          <Badge variant={
-                            request.urgency === 'emergency' ? 'destructive' :
-                            request.urgency === 'high' ? 'outline' :
-                            'secondary'
-                          }>
-                            {request.urgency}
-                          </Badge>
+                          <StatusBadge kind="urgency" value={request.urgency} />
                         </div>
                         <p className="text-sm text-gray-500 mt-1">
                           {request.status} • {new Date(request.created_at).toLocaleDateString()}

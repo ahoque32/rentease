@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   ArrowLeft, 
@@ -237,9 +238,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <Badge variant={unit.status === 'occupied' ? 'default' : unit.status === 'maintenance' ? 'destructive' : 'secondary'}>
-                            {unit.status}
-                          </Badge>
+                          <StatusBadge kind="unit" value={unit.status} />
                           <Button variant="ghost" size="sm" asChild>
                             <Link href={`/properties/${params.id}/units/${unit.id}/edit`}>
                               <Edit className="w-4 h-4" />

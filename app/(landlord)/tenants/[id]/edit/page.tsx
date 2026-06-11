@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -7,14 +6,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FormError } from '@/components/shared/FormError'
 import { ArrowLeft } from 'lucide-react'
 import { syncTenantToGHL } from '@/lib/ghl/contacts'
 
 interface PageProps {
   params: { id: string }
+  searchParams?: { error?: string }
 }
 
-export default async function EditTenantPage({ params }: PageProps) {
+export default async function EditTenantPage({ params, searchParams }: PageProps) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -33,6 +34,10 @@ export default async function EditTenantPage({ params }: PageProps) {
   async function updateTenant(formData: FormData) {
     'use server'
 
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/login')
+
     const tenantData = {
       first_name: formData.get('first_name') as string,
       last_name: formData.get('last_name') as string,
@@ -44,17 +49,18 @@ export default async function EditTenantPage({ params }: PageProps) {
       notes: (formData.get('notes') as string) || null,
     }
 
-    const admin = createAdminClient()
-
-    const { data: updatedTenant, error } = await admin
+    // User-scoped client: RLS guarantees only the owner can update
+    const { data: updatedTenant, error } = await supabase
       .from('tenants')
       .update(tenantData)
       .eq('id', params.id)
+      .eq('landlord_id', user.id)
       .select()
       .single()
 
     if (error) {
-      redirect(`/tenants/${params.id}/edit?error=` + encodeURIComponent(error.message))
+      console.error('Tenant update failed:', error)
+      redirect(`/tenants/${params.id}/edit?error=` + encodeURIComponent('Could not save changes. Please try again.'))
     }
 
     // Sync to GHL
@@ -85,6 +91,7 @@ export default async function EditTenantPage({ params }: PageProps) {
         </CardHeader>
         <CardContent>
           <form action={updateTenant} className="space-y-6">
+            <FormError message={searchParams?.error} />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_name">First Name</Label>

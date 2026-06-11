@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { handleRouteError } from '@/lib/api/respond'
 
 const MINIMAX_API_URL = 'https://api.minimax.io/anthropic'
 const MINIMAX_MODEL = 'MiniMax-M1-80k'
@@ -91,6 +92,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Modification queries are not allowed' }, { status: 400 })
     }
 
+    // Defense-in-depth alongside the RPC's own checks: one statement, no comments,
+    // no system schemas. RLS on the invoker scopes whatever passes through.
+    if (sql.includes(';') || /(--|\/\*)/.test(sql) || /\b(pg_catalog|information_schema|auth|storage)\s*\./i.test(sql)) {
+      return NextResponse.json({ error: 'Query contains disallowed syntax' }, { status: 400 })
+    }
+
     // Step 3: Execute via Supabase RPC
     const { data: result, error: rpcError } = await supabase.rpc('execute_readonly_query', {
       query_sql: sql,
@@ -101,7 +108,6 @@ export async function POST(request: Request) {
       console.error('RPC error:', rpcError)
       return NextResponse.json({
         error: 'Query execution failed',
-        details: rpcError.message,
         sql,
       }, { status: 400 })
     }
@@ -137,8 +143,7 @@ export async function POST(request: Request) {
       sql,
       rawData: result,
     })
-  } catch (error: any) {
-    console.error('AI query error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('AI query error', error)
   }
 }
