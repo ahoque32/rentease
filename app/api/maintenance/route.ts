@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { maintenanceRequestSchema } from '@/lib/validation/schemas'
 import { forbidden, handleRouteError, internalError, unauthorized } from '@/lib/api/respond'
+import { userOwnsUnit } from '@/lib/api/ownership'
 
 export async function POST(request: Request) {
   try {
@@ -16,14 +17,7 @@ export async function POST(request: Request) {
     const body = maintenanceRequestSchema.parse(await request.json())
 
     // The unit must belong to one of the landlord's properties
-    const { data: unit } = await supabase
-      .from('units')
-      .select('id, properties!inner(landlord_id)')
-      .eq('id', body.unit_id)
-      .single()
-
-    const unitLandlordId = (unit as any)?.properties?.landlord_id
-    if (!unit || unitLandlordId !== user.id) {
+    if (!(await userOwnsUnit(supabase, body.unit_id, user.id))) {
       return forbidden()
     }
 

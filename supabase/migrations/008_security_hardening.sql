@@ -203,3 +203,7 @@ CREATE INDEX IF NOT EXISTS idx_tenants_auth_user ON tenants(auth_user_id)
   WHERE auth_user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_notifications_landlord_created
   ON notifications(landlord_id, created_at DESC);
+-- Support the tenant-side RLS subqueries added above
+CREATE INDEX IF NOT EXISTS idx_lease_tenants_tenant ON lease_tenants(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_tenant ON maintenance_requests(tenant_id)
+  WHERE tenant_id IS NOT NULL;

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { formatCurrency, formatDate } from '@/lib/format'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   ArrowLeft,
@@ -104,7 +105,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">${lease.monthly_rent.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{formatCurrency(lease.monthly_rent)}</div>
             <p className="text-sm text-gray-600">Monthly Rent</p>
           </CardContent>
         </Card>
@@ -116,13 +117,13 @@ export default async function LeaseDetailPage({ params }: PageProps) {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">${totalPaid.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
             <p className="text-sm text-gray-600">Total Collected</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">${(totalDue - totalPaid).toLocaleString()}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalDue - totalPaid)}</div>
             <p className="text-sm text-gray-600">Remaining</p>
           </CardContent>
         </Card>
@@ -203,11 +204,11 @@ export default async function LeaseDetailPage({ params }: PageProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Start Date</p>
-                <p className="font-medium">{new Date(lease.start_date).toLocaleDateString()}</p>
+                <p className="font-medium">{formatDate(lease.start_date)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">End Date</p>
-                <p className="font-medium">{new Date(lease.end_date).toLocaleDateString()}</p>
+                <p className="font-medium">{formatDate(lease.end_date)}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -235,16 +236,16 @@ export default async function LeaseDetailPage({ params }: PageProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Monthly Rent</p>
-                <p className="font-medium">${lease.monthly_rent.toLocaleString()}</p>
+                <p className="font-medium">{formatCurrency(lease.monthly_rent)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Security Deposit</p>
-                <p className="font-medium">{lease.security_deposit ? `$${lease.security_deposit.toLocaleString()}` : 'Not specified'}</p>
+                <p className="font-medium">{lease.security_deposit ? formatCurrency(lease.security_deposit) : 'Not specified'}</p>
               </div>
             </div>
             <div>
               <p className="text-sm text-gray-500">Late Fee</p>
-              <p className="font-medium">{lease.late_fee_amount ? `$${lease.late_fee_amount.toLocaleString()}` : 'None'}</p>
+              <p className="font-medium">{lease.late_fee_amount ? formatCurrency(lease.late_fee_amount) : 'None'}</p>
             </div>
           </CardContent>
         </Card>
@@ -278,9 +279,9 @@ export default async function LeaseDetailPage({ params }: PageProps) {
               <tbody>
                 {rentSchedule?.map((payment) => (
                   <tr key={payment.id} className="border-b last:border-0">
-                    <td className="py-3 px-4">{new Date(payment.due_date).toLocaleDateString()}</td>
-                    <td className="text-right py-3 px-4">${payment.amount_due.toLocaleString()}</td>
-                    <td className="text-right py-3 px-4">${(payment.amount_paid || 0).toLocaleString()}</td>
+                    <td className="py-3 px-4">{formatDate(payment.due_date)}</td>
+                    <td className="text-right py-3 px-4">{formatCurrency(payment.amount_due)}</td>
+                    <td className="text-right py-3 px-4">{formatCurrency(payment.amount_paid || 0)}</td>
                     <td className="text-center py-3 px-4">
                       <StatusBadge kind="rent" value={payment.status} />
                     </td>

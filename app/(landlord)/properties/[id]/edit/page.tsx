@@ -49,12 +49,16 @@ export default async function EditPropertyPage({ params, searchParams }: PagePro
       zillow_url: (formData.get('zillow_url') as string) || null,
     }
 
-    // User-scoped client: RLS guarantees only the owner can update
+    // User-scoped client: RLS guarantees only the owner can update.
+    // select().single() surfaces the case where no row matched (bad/foreign ID),
+    // which would otherwise succeed silently with 0 rows updated.
     const { error } = await supabase
       .from('properties')
       .update(propertyData)
       .eq('id', params.id)
       .eq('landlord_id', user.id)
+      .select('id')
+      .single()
 
     if (error) {
       console.error('Property update failed:', error)

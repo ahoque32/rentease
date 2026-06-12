@@ -49,7 +49,9 @@ export default async function EditTenantPage({ params, searchParams }: PageProps
       notes: (formData.get('notes') as string) || null,
     }
 
-    // User-scoped client: RLS guarantees only the owner can update
+    // User-scoped client: RLS guarantees only the owner can update.
+    // single() also surfaces the case where no row matched (bad/foreign ID),
+    // which would otherwise succeed silently with 0 rows updated.
     const { data: updatedTenant, error } = await supabase
       .from('tenants')
       .update(tenantData)

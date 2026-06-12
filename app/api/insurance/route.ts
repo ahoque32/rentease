@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { insurancePolicySchema } from '@/lib/validation/schemas'
 import { forbidden, handleRouteError, internalError, unauthorized } from '@/lib/api/respond'
+import { userOwnsProperty } from '@/lib/api/ownership'
 
 export async function POST(request: Request) {
   try {
@@ -16,13 +17,7 @@ export async function POST(request: Request) {
     const body = insurancePolicySchema.parse(await request.json())
 
     // The property must belong to the requesting landlord
-    const { data: property } = await supabase
-      .from('properties')
-      .select('id, landlord_id')
-      .eq('id', body.property_id)
-      .single()
-
-    if (!property || property.landlord_id !== user.id) {
+    if (!(await userOwnsProperty(supabase, body.property_id, user.id))) {
       return forbidden()
     }
 

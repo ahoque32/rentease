@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { leaseSchema } from '@/lib/validation/schemas'
 import { forbidden, handleRouteError, internalError, unauthorized } from '@/lib/api/respond'
+import { userOwnsTenant, userOwnsUnit } from '@/lib/api/ownership'
 
 export async function POST(request: Request) {
   try {
@@ -15,29 +16,14 @@ export async function POST(request: Request) {
 
     const { tenant_id, ...leaseFields } = leaseSchema.parse(await request.json())
 
-    // The unit must belong to one of the landlord's properties
-    const { data: unit } = await supabase
-      .from('units')
-      .select('id, properties!inner(landlord_id)')
-      .eq('id', leaseFields.unit_id)
-      .single()
+    // The unit and the linked tenant (if any) must belong to the landlord
+    const [ownsUnit, ownsTenant] = await Promise.all([
+      userOwnsUnit(supabase, leaseFields.unit_id, user.id),
+      tenant_id ? userOwnsTenant(supabase, tenant_id, user.id) : Promise.resolve(true),
+    ])
 
-    const unitLandlordId = (unit as any)?.properties?.landlord_id
-    if (!unit || unitLandlordId !== user.id) {
+    if (!ownsUnit || !ownsTenant) {
       return forbidden()
-    }
-
-    // The tenant (if linked) must belong to the landlord too
-    if (tenant_id) {
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('id, landlord_id')
-        .eq('id', tenant_id)
-        .single()
-
-      if (!tenant || tenant.landlord_id !== user.id) {
-        return forbidden()
-      }
     }
 
     const admin = createAdminClient()

@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only SELECT queries are allowed' }, { status: 400 })
     }
 
-    const blocked = /(insert|update|delete|drop|alter|create|truncate|grant|revoke)\s/i
+    const blocked = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke)\b/i
     if (blocked.test(sql)) {
       return NextResponse.json({ error: 'Modification queries are not allowed' }, { status: 400 })
     }
