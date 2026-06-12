@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe/client'
+import { handleRouteError } from '@/lib/api/respond'
 
 export async function POST(request: Request) {
   try {
@@ -77,8 +78,7 @@ export async function POST(request: Request) {
       paymentIntentId: paymentIntent.id,
       amount: amountDue / 100,
     })
-  } catch (error: any) {
-    console.error('Create payment intent error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Create payment intent error', error)
   }
 }

@@ -173,6 +173,9 @@ export default function MaintenanceForm({ userId, units, tenants, defaultUnit }:
                     <SelectItem value="appliance">Appliance</SelectItem>
                     <SelectItem value="structural">Structural</SelectItem>
                     <SelectItem value="pest">Pest</SelectItem>
+                    <SelectItem value="maintenance">General Maintenance</SelectItem>
+                    <SelectItem value="noise">Noise</SelectItem>
+                    <SelectItem value="billing">Billing</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>

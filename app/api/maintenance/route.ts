@@ -1,44 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { maintenanceRequestSchema } from '@/lib/validation/schemas'
+import { forbidden, handleRouteError, internalError, unauthorized } from '@/lib/api/respond'
+import { userOwnsUnit } from '@/lib/api/ownership'
 
 export async function POST(request: Request) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) {
+      return unauthorized()
+    }
+
+    const body = maintenanceRequestSchema.parse(await request.json())
+
+    // The unit must belong to one of the landlord's properties
+    if (!(await userOwnsUnit(supabase, body.unit_id, user.id))) {
+      return forbidden()
+    }
+
+    const admin = createAdminClient()
+    const { data: maintenanceRequest, error } = await admin
+      .from('maintenance_requests')
+      .insert({ landlord_id: user.id, status: 'new', ...body })
+      .select()
+      .single()
+
+    if (error) {
+      return internalError('Maintenance request insert failed', error)
+    }
+
+    return NextResponse.json({ id: maintenanceRequest.id })
+  } catch (error) {
+    return handleRouteError('Maintenance POST error', error)
   }
-
-  const body = await request.json()
-  const admin = createAdminClient()
-
-  // Validate required fields
-  if (!body.unit_id || !body.title || !body.category || !body.urgency) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-  }
-
-  const maintenanceData = {
-    landlord_id: user.id,
-    unit_id: body.unit_id,
-    tenant_id: body.tenant_id || null,
-    title: body.title,
-    description: body.description || null,
-    category: body.category,
-    urgency: body.urgency,
-    status: 'new',
-    notes: body.notes || null,
-  }
-
-  const { data: request_, error } = await admin
-    .from('maintenance_requests')
-    .insert(maintenanceData)
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ id: request_.id })
 }

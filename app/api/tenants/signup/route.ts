@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { handleRouteError } from '@/lib/api/respond'
 
 export async function POST(request: Request) {
   try {
@@ -65,8 +66,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Tenant signup error:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Tenant signup error', error)
   }
 }

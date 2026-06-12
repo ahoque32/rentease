@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { internalError } from '@/lib/api/respond'
 
 const CATEGORY_VALUES = ['maintenance', 'noise', 'billing', 'other'] as const
 const SEVERITY_VALUES = ['low', 'medium', 'high'] as const
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Fetch tenant maintenance requests error', error)
   }
 
   return NextResponse.json({ requests: data || [] })
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
     .eq('tenant_id', tenant.id)
 
   if (leaseError) {
-    return NextResponse.json({ error: leaseError.message }, { status: 500 })
+    return internalError('Fetch tenant leases error', leaseError)
   }
 
   const leaseRows = (leaseLinks || [])
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Create tenant maintenance request error', error)
   }
 
   return NextResponse.json({ id: data.id })

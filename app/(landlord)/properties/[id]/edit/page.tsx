@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -7,13 +6,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FormError } from '@/components/shared/FormError'
 import { ArrowLeft } from 'lucide-react'
 
 interface PageProps {
   params: { id: string }
+  searchParams?: { error?: string }
 }
 
-export default async function EditPropertyPage({ params }: PageProps) {
+export default async function EditPropertyPage({ params, searchParams }: PageProps) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -33,6 +34,8 @@ export default async function EditPropertyPage({ params }: PageProps) {
     'use server'
 
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/login')
 
     const propertyData = {
       name: formData.get('name') as string,
@@ -46,15 +49,20 @@ export default async function EditPropertyPage({ params }: PageProps) {
       zillow_url: (formData.get('zillow_url') as string) || null,
     }
 
-    const admin = createAdminClient()
-
-    const { error } = await admin
+    // User-scoped client: RLS guarantees only the owner can update.
+    // select().single() surfaces the case where no row matched (bad/foreign ID),
+    // which would otherwise succeed silently with 0 rows updated.
+    const { error } = await supabase
       .from('properties')
       .update(propertyData)
       .eq('id', params.id)
+      .eq('landlord_id', user.id)
+      .select('id')
+      .single()
 
     if (error) {
-      redirect(`/properties/${params.id}/edit?error=` + encodeURIComponent(error.message))
+      console.error('Property update failed:', error)
+      redirect(`/properties/${params.id}/edit?error=` + encodeURIComponent('Could not save changes. Please try again.'))
     }
 
     redirect(`/properties/${params.id}`)
@@ -77,6 +85,7 @@ export default async function EditPropertyPage({ params }: PageProps) {
         </CardHeader>
         <CardContent>
           <form action={updateProperty} className="space-y-6">
+            <FormError message={searchParams?.error} />
             <div className="space-y-2">
               <Label htmlFor="name">Property Name</Label>
               <Input

@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { formatCurrency, formatDate } from '@/lib/format'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InviteTenantButton } from './InviteTenantButton'
 import { 
@@ -168,18 +170,18 @@ export default async function TenantDetailPage({ params }: PageProps) {
                   <DollarSign className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-500">Monthly Rent</p>
-                    <p>${lease.monthly_rent.toLocaleString()}</p>
+                    <p>{formatCurrency(lease.monthly_rent)}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Start Date</p>
-                    <p>{new Date(lease.start_date).toLocaleDateString()}</p>
+                    <p>{formatDate(lease.start_date)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">End Date</p>
-                    <p>{new Date(lease.end_date).toLocaleDateString()}</p>
+                    <p>{formatDate(lease.end_date)}</p>
                   </div>
                 </div>
 
@@ -226,21 +228,15 @@ export default async function TenantDetailPage({ params }: PageProps) {
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
                       <div>
-                        <p className="font-medium">${payment.amount.toLocaleString()}</p>
+                        <p className="font-medium">{formatCurrency(payment.amount)}</p>
                         <p className="text-sm text-gray-500">
                           {payment.type} • {payment.method}
                         </p>
                       </div>
                       <div className="text-right">
-                        <Badge variant={
-                          payment.status === 'completed' ? 'default' :
-                          payment.status === 'pending' ? 'secondary' :
-                          'destructive'
-                        }>
-                          {payment.status}
-                        </Badge>
+                        <StatusBadge kind="payment" value={payment.status} />
                         <p className="text-sm text-gray-500 mt-1">
-                          {new Date(payment.created_at).toLocaleDateString()}
+                          {formatDate(payment.created_at)}
                         </p>
                       </div>
                     </div>
@@ -273,16 +269,10 @@ export default async function TenantDetailPage({ params }: PageProps) {
                       >
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{request.title}</p>
-                          <Badge variant={
-                            request.urgency === 'emergency' ? 'destructive' :
-                            request.urgency === 'high' ? 'outline' :
-                            'secondary'
-                          }>
-                            {request.urgency}
-                          </Badge>
+                          <StatusBadge kind="urgency" value={request.urgency} />
                         </div>
                         <p className="text-sm text-gray-500 mt-1">
-                          {request.status} • {new Date(request.created_at).toLocaleDateString()}
+                          {request.status} • {formatDate(request.created_at)}
                         </p>
                       </div>
                     </Link>

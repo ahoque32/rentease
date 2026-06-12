@@ -2,20 +2,13 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Wrench } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 
 interface PageProps {
   searchParams: { token?: string }
-}
-
-function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (status === 'completed') return 'default'
-  if (status === 'in_progress' || status === 'scheduled') return 'secondary'
-  if (status === 'cancelled') return 'outline'
-  return 'destructive'
 }
 
 export default async function TenantMaintenancePage({ searchParams }: PageProps) {
@@ -106,7 +99,7 @@ export default async function TenantMaintenancePage({ searchParams }: PageProps)
                             {request.category || 'other'} {request.severity ? `• ${request.severity}` : ''} • {formatDate(request.created_at)}
                           </p>
                         </div>
-                        <Badge variant={statusBadgeVariant(request.status)}>{request.status.replace('_', ' ')}</Badge>
+                        <StatusBadge kind="maintenance" value={request.status} />
                       </div>
                     </div>
                   </Link>

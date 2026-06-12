@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { handleRouteError } from '@/lib/api/respond'
 
 function fullName(firstName: string, lastName: string) {
   return `${firstName} ${lastName}`.trim()
@@ -70,8 +71,7 @@ export async function POST(request: Request) {
         ? 'Tenant account created'
         : 'Auth account created. No lease assigned yet.',
     })
-  } catch (error: any) {
-    console.error('Tenant register error:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Tenant register error', error)
   }
 }

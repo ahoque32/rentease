@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { internalError } from '@/lib/api/respond'
 
 export async function PUT(
   request: Request,
@@ -55,7 +56,7 @@ export async function PUT(
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Update maintenance request error', error)
   }
 
   return NextResponse.json({ id: updated.id })
@@ -93,7 +94,7 @@ export async function DELETE(
   const { error } = await admin.from('maintenance_requests').delete().eq('id', params.id)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Delete maintenance request error', error)
   }
 
   return NextResponse.json({ success: true })

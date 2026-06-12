@@ -1,6 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { signatureSchema } from '@/lib/validation/schemas'
+import { forbidden, handleRouteError, internalError, notFound, unauthorized } from '@/lib/api/respond'
+
+/** Returns true when the user is the lease's landlord or one of its tenants. */
+async function userCanAccessLease(
+  supabase: ReturnType<typeof createClient>,
+  leaseId: string,
+  userId: string
+) {
+  const { data: lease } = await supabase
+    .from('leases')
+    .select('id, status, lease_tenants(tenant_id), units!inner(properties!inner(landlord_id))')
+    .eq('id', leaseId)
+    .single()
+
+  if (!lease) return { lease: null, isLandlord: false, tenantId: null }
+
+  const isLandlord = (lease as any).units?.properties?.landlord_id === userId
+  const tenantIds = (lease as any).lease_tenants?.map((lt: any) => lt.tenant_id) || []
+
+  let tenantId: string | null = null
+  if (tenantIds.length > 0) {
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .in('id', tenantIds)
+      .maybeSingle()
+    tenantId = tenant?.id ?? null
+  }
+
+  return { lease, isLandlord, tenantId }
+}
 
 export async function POST(
   request: NextRequest,
@@ -11,47 +44,23 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorized()
     }
 
-    const body = await request.json()
-    const { signer_name } = body
+    const { signer_name } = signatureSchema.parse(await request.json())
 
-    if (!signer_name) {
-      return NextResponse.json({ error: 'Signer name is required' }, { status: 400 })
-    }
-
-    // Get lease details to verify access
-    const { data: lease } = await supabase
-      .from('leases')
-      .select('*, lease_tenants(tenant_id), units!inner(property_id, properties!inner(landlord_id))')
-      .eq('id', params.id)
-      .single()
+    const { lease, isLandlord, tenantId } = await userCanAccessLease(supabase, params.id, user.id)
 
     if (!lease) {
-      return NextResponse.json({ error: 'Lease not found' }, { status: 404 })
+      return notFound('Lease')
     }
 
-    // Determine signer role
-    const isLandlord = lease.units?.properties?.landlord_id === user.id
-    const tenantIds = lease.lease_tenants?.map((lt: any) => lt.tenant_id) || []
-    
-    // Check if user is a tenant on this lease
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .in('id', tenantIds)
-      .single()
-    
-    const isTenant = !!tenant
-
-    if (!isLandlord && !isTenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    if (!isLandlord && !tenantId) {
+      return forbidden()
     }
 
     const signer_role = isLandlord ? 'landlord' : 'tenant'
-    const signer_id = isLandlord ? user.id : tenant!.id
+    const signer_id = isLandlord ? user.id : tenantId!
 
     // Check if already signed
     const { data: existingSignature } = await supabase
@@ -100,26 +109,28 @@ export async function POST(
     const hasLandlordSignature = signatures?.some(s => s.signer_role === 'landlord')
     const hasTenantSignature = signatures?.some(s => s.signer_role === 'tenant')
 
-    // Update lease status if both have signed
+    // Update lease status if both have signed. The status guard makes the
+    // transition idempotent if two signature requests land concurrently.
     if (hasLandlordSignature && hasTenantSignature) {
       await admin
         .from('leases')
         .update({ status: 'active' })
         .eq('id', params.id)
+        .in('status', ['draft', 'pending_signatures'])
     } else if (lease.status === 'draft') {
       await admin
         .from('leases')
         .update({ status: 'pending_signatures' })
         .eq('id', params.id)
+        .eq('status', 'draft')
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       signature,
       lease_activated: hasLandlordSignature && hasTenantSignature
     })
-  } catch (error: any) {
-    console.error('Signature API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Signature POST error', error)
   }
 }
 
@@ -132,23 +143,31 @@ export async function GET(
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorized()
     }
 
-    // Get signatures for this lease
+    // Only the lease's landlord or tenants may view its signatures
+    const { lease, isLandlord, tenantId } = await userCanAccessLease(supabase, params.id, user.id)
+
+    if (!lease) {
+      return notFound('Lease')
+    }
+
+    if (!isLandlord && !tenantId) {
+      return forbidden()
+    }
+
     const { data: signatures, error } = await supabase
       .from('signatures')
       .select('*')
       .eq('lease_id', params.id)
 
     if (error) {
-      console.error('Fetch signatures error:', error)
-      return NextResponse.json({ error: 'Failed to fetch signatures' }, { status: 500 })
+      return internalError('Fetch signatures error', error)
     }
 
     return NextResponse.json({ signatures: signatures || [] })
-  } catch (error: any) {
-    console.error('Get signatures API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Signature GET error', error)
   }
 }

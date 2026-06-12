@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { handleRouteError } from '@/lib/api/respond'
 
 // GET /api/screening/surveys/[id] - Get survey details with responses
 export async function GET(
@@ -46,9 +47,8 @@ export async function GET(
       survey,
       responses: responses || []
     })
-  } catch (error: any) {
-    console.error('Survey detail API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Survey detail API error', error)
   }
 }
 
@@ -94,9 +94,8 @@ export async function PATCH(
     }
 
     return NextResponse.json({ survey })
-  } catch (error: any) {
-    console.error('Update survey API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Update survey API error', error)
   }
 }
 
@@ -137,8 +136,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Delete survey API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Delete survey API error', error)
   }
 }

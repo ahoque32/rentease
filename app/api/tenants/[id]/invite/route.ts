@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/notifications/email'
 import { getUserRole } from '@/lib/auth/utils'
+import { handleRouteError } from '@/lib/api/respond'
 
 export async function POST(
   _request: Request,
@@ -73,8 +74,7 @@ export async function POST(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Tenant invite error:', error)
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Tenant invite error', error)
   }
 }

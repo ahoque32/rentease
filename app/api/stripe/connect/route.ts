@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe/client'
+import { handleRouteError } from '@/lib/api/respond'
 
 export async function POST() {
   try {
@@ -56,8 +57,7 @@ export async function POST() {
     })
 
     return NextResponse.json({ url: accountLink.url })
-  } catch (error: any) {
-    console.error('Stripe Connect error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Stripe Connect error', error)
   }
 }

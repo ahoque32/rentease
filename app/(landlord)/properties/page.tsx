@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { Building2, Plus, MapPin, Home } from 'lucide-react'
 
 export default async function PropertiesPage() {
@@ -35,18 +36,13 @@ export default async function PropertiesPage() {
       </div>
 
       {properties?.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Building2 className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
-            <p className="text-gray-600 mb-6">Add your first property to get started</p>
-            <Button asChild>
-              <Link href="/properties/new">Add Property</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Building2}
+          title="No properties yet"
+          description="Add your first property to get started"
+          actionLabel="Add Property"
+          actionHref="/properties/new"
+        />
       ) : (
         <div className="grid gap-4">
           {properties?.map((property) => {

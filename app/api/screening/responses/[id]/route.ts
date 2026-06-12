@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { handleRouteError } from '@/lib/api/respond'
 
 // Calculate compatibility score based on response data
 function calculateCompatibilityScore(response: any): { score: number; breakdown: any } {
@@ -103,9 +104,8 @@ export async function GET(
     }
 
     return NextResponse.json({ response })
-  } catch (error: any) {
-    console.error('Response detail API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Response detail API error', error)
   }
 }
 
@@ -166,9 +166,8 @@ export async function PATCH(
     }
 
     return NextResponse.json({ response })
-  } catch (error: any) {
-    console.error('Update response API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleRouteError('Update response API error', error)
   }
 }
 

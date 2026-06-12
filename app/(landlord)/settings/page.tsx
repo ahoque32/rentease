@@ -1,13 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { StripeConnectButton } from '@/components/settings/StripeConnectButton'
+import { FormError } from '@/components/shared/FormError'
+import { CheckCircle2 } from 'lucide-react'
 
-export default async function SettingsPage() {
+interface SettingsPageProps {
+  searchParams?: { saved?: string; error?: string }
+}
+
+export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -22,16 +29,25 @@ export default async function SettingsPage() {
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/login')
 
-    const updates = {
-      full_name: formData.get('fullName') as string,
-      phone: formData.get('phone') as string,
-      company_name: formData.get('companyName') as string,
+    const fullName = String(formData.get('fullName') ?? '').trim()
+    if (!fullName) {
+      redirect('/settings?error=' + encodeURIComponent('Full name is required'))
     }
 
-    const admin = createAdminClient()
-    await admin.from('landlords').update(updates).eq('id', user!.id)
-    redirect('/settings')
+    const updates = {
+      full_name: fullName,
+      phone: String(formData.get('phone') ?? '').trim() || null,
+      company_name: String(formData.get('companyName') ?? '').trim() || null,
+    }
+
+    const { error } = await supabase.from('landlords').update(updates).eq('id', user.id)
+    if (error) {
+      console.error('Profile update failed:', error)
+      redirect('/settings?error=' + encodeURIComponent('Could not save your profile. Please try again.'))
+    }
+    redirect('/settings?saved=1')
   }
 
   async function signOut() {
@@ -54,42 +70,57 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <form action={updateProfile} className="space-y-4">
+            <FormError message={searchParams?.error} />
+            {searchParams?.saved && (
+              <div
+                role="status"
+                className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50/90 px-4 py-3 text-sm text-green-700"
+              >
+                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                Profile saved.
+              </div>
+            )}
             <div className="grid gap-4">
               <div>
-                <label className="text-sm font-medium">Full Name</label>
-                <input
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
                   name="fullName"
+                  required
                   defaultValue={landlord?.full_name}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                  className="mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium">Email</label>
-                <input
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
                   type="email"
                   value={landlord?.email}
                   disabled
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 bg-gray-50"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium">Phone</label>
-                <input
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
                   name="phone"
                   type="tel"
                   defaultValue={landlord?.phone || ''}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                  className="mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium">Company Name (Optional)</label>
-                <input
+                <Label htmlFor="companyName">Company Name (Optional)</Label>
+                <Input
+                  id="companyName"
                   name="companyName"
                   defaultValue={landlord?.company_name || ''}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                  className="mt-1"
                 />
               </div>
             </div>

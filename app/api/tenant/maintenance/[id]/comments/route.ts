@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
+import { apiError, internalError } from '@/lib/api/respond'
+import { commentSchema } from '@/lib/validation/schemas'
 
 async function resolveTenant(token: string | null) {
   const supabase = createClient()
@@ -66,7 +68,7 @@ export async function GET(
     .order('created_at', { ascending: true })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Fetch tenant maintenance comments error', error)
   }
 
   return NextResponse.json({ comments: data || [] })
@@ -88,12 +90,11 @@ export async function POST(
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
-  const body = await request.json()
-  const commentBody = String(body.body || '').trim()
-
-  if (!commentBody) {
-    return NextResponse.json({ error: 'Comment body is required' }, { status: 400 })
+  const parsed = commentSchema.safeParse(await request.json().catch(() => ({})))
+  if (!parsed.success) {
+    return apiError('Comment body is required (max 5000 characters)', 400)
   }
+  const commentBody = parsed.data.body
 
   const { data, error } = await admin
     .from('complaint_comments')
@@ -107,7 +108,7 @@ export async function POST(
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return internalError('Create tenant maintenance comment error', error)
   }
 
   return NextResponse.json({ comment: data })

@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { formatCurrency, formatDate } from '@/lib/format'
 import { Plus, Shield } from 'lucide-react'
 
 export default async function InsurancePage() {
@@ -33,18 +35,13 @@ export default async function InsurancePage() {
       </div>
 
       {policies?.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No insurance policies</h3>
-            <p className="text-gray-600 mb-6">Add your first insurance policy</p>
-            <Button asChild>
-              <Link href="/insurance/new">Add Policy</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Shield}
+          title="No insurance policies"
+          description="Add your first insurance policy"
+          actionLabel="Add Policy"
+          actionHref="/insurance/new"
+        />
       ) : (
         <div className="grid gap-4">
           {policies?.map((policy) => (
@@ -56,14 +53,14 @@ export default async function InsurancePage() {
                       <h3 className="text-lg font-semibold text-gray-900">{policy.provider_name}</h3>
                       <p className="text-gray-600">{(policy as any).properties?.name}</p>
                       <p className="text-sm text-gray-500">
-                        {policy.type} • ${policy.coverage_amount?.toLocaleString()} coverage
+                        {policy.type} • {formatCurrency(policy.coverage_amount)} coverage
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${policy.premium_amount}/{policy.premium_frequency}</p>
+                      <p className="font-medium">{formatCurrency(policy.premium_amount)}/{policy.premium_frequency}</p>
                       {policy.renewal_date && (
                         <p className="text-sm text-gray-500">
-                          Renews {new Date(policy.renewal_date).toLocaleDateString()}
+                          Renews {formatDate(policy.renewal_date)}
                         </p>
                       )}
                     </div>

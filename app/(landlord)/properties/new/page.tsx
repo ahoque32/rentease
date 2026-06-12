@@ -8,17 +8,24 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SubmitButton } from '@/components/ui/submit-button'
+import { FormError } from '@/components/shared/FormError'
+import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft } from 'lucide-react'
 
-export default function NewPropertyPage() {
+interface NewPropertyPageProps {
+  searchParams?: { error?: string }
+}
+
+export default function NewPropertyPage({ searchParams }: NewPropertyPageProps) {
   async function createProperty(formData: FormData) {
     'use server'
 
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/login')
 
     const propertyData = {
-      landlord_id: user!.id,
+      landlord_id: user.id,
       name: formData.get('name') as string,
       address_line1: formData.get('address_line1') as string,
       address_line2: formData.get('address_line2') as string || null,
@@ -39,7 +46,8 @@ export default function NewPropertyPage() {
       .single()
 
     if (error) {
-      redirect('/properties/new?error=' + encodeURIComponent(error.message))
+      console.error('Property insert failed:', error)
+      redirect('/properties/new?error=' + encodeURIComponent('Could not create the property. Please check the form and try again.'))
     }
 
     redirect('/properties/' + data.id)
@@ -62,6 +70,7 @@ export default function NewPropertyPage() {
         </CardHeader>
         <CardContent>
           <form action={createProperty} className="space-y-6">
+            <FormError message={searchParams?.error} />
             <div className="space-y-2">
               <Label htmlFor="name">Property Name</Label>
               <Input
@@ -137,11 +146,10 @@ export default function NewPropertyPage() {
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
-              <textarea
+              <Textarea
                 id="notes"
                 name="notes"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Any additional notes about this property..."
               />
             </div>

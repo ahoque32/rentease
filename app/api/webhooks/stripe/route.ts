@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, paymentReceiptEmail } from '@/lib/notifications/email'
+import { apiError } from '@/lib/api/respond'
 
 function getStripeInstance() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -138,8 +139,9 @@ export async function POST(request: Request) {
 
   try {
     event = getStripeInstance().webhooks.constructEvent(payload, signature, webhookSecret)
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 })
+  } catch (err) {
+    console.error('Stripe webhook signature verification failed:', err)
+    return apiError('Invalid webhook signature', 400)
   }
 
   const supabase = getServiceSupabase()
